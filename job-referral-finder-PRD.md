@@ -8,6 +8,30 @@
 
 ---
 
+## ⚠️ READ FIRST — This PRD is v1.0 (the original idea). It has been researched & optimized since.
+
+This document is the **original, unresearched product vision**. After deep research it was
+**superseded** by an optimized design. For the current truth, read these in order:
+
+1. **`docs/PROJECT_GUIDE.md`** — the complete A‑to‑Z explainer (start here; written for a total beginner).
+   Covers what we're building, every open‑source repo we evaluated and what we take from each, all
+   decisions + reasoning, cost, safety, current build status, and how to run it.
+2. **`docs/superpowers/specs/2026-06-28-job-referral-finder-v2-design.md`** — the optimized **v2.1 design**
+   (what changed vs this PRD and why).
+3. **`docs/superpowers/plans/2026-06-28-phase1-foundation.md`** — the step‑by‑step Phase‑1 build plan.
+
+**Key changes from this PRD (quick list):**
+- Custom scrapers → **JobSpy** (one library) + free remote APIs (Remotive/RemoteOK/Arbeitnow/Himalayas).
+- Walled boards (Wellfound/Instahyre) → **camofox-browser** (anti‑detect engine).
+- **Proxycurl is DEAD** (shut down Jul 2025) → referrals now via **SerpApi Google‑dork** (safe, free, public data).
+- Paid Claude → **free‑first LLM** (Gemini/Groq). Budget **₹450 → ~₹0/month**.
+- **No auto‑apply / auto‑DM** ever (ban + legal risk). Human approves everything.
+- Resume tailoring & interview prep → reuse the **career-ops** skill (v2).
+
+Everything below is kept for historical context and full module/UI/schema detail.
+
+---
+
 ## TABLE OF CONTENTS
 1. [Project Overview](#1-project-overview)
 2. [Goals & Non-Goals](#2-goals--non-goals)
