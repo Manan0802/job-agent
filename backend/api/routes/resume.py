@@ -3,6 +3,7 @@ import tempfile
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from backend.agents.resume_profiler import parse_resume_pdf
 from backend.services.profile_store import save_profile, load_profile
+from backend.schemas.profile import Profile
 
 router = APIRouter(prefix="/api/v1/resume", tags=["resume"])
 
@@ -28,4 +29,10 @@ async def get_profile():
     profile = load_profile()
     if profile is None:
         raise HTTPException(status_code=404, detail="No profile yet")
+    return profile.model_dump()
+
+
+@router.put("/profile")
+async def update_profile(profile: Profile):
+    save_profile(profile)
     return profile.model_dump()
