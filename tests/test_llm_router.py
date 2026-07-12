@@ -12,3 +12,15 @@ def test_complete_returns_text():
     _, kwargs = client.chat.completions.create.call_args
     assert kwargs["model"]  # non-empty
     assert kwargs["messages"][0]["role"] == "system"
+
+
+def test_complete_falls_back_to_groq_on_error():
+    fake = MagicMock()
+    fake.choices = [MagicMock(message=MagicMock(content="from groq"))]
+    with patch.object(router, "_client") as primary, \
+         patch.object(router, "_groq_client") as fallback:
+        primary.chat.completions.create.side_effect = Exception("rate limited")
+        fallback.chat.completions.create.return_value = fake
+        out = router.complete("say hi")
+    assert out == "from groq"
+    fallback.chat.completions.create.assert_called_once()
