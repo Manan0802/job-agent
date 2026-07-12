@@ -7,3 +7,6 @@ data/profile/*.json
 data/resume/*
 .pytest_cache/
 *.pdf
+.DS_Store
+.claude
+.mcp.json
