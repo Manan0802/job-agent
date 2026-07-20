@@ -16,11 +16,13 @@ def complete(prompt: str, system: str = "", model: str | None = None) -> str:
             model=model or _settings.llm_model,
             messages=messages,
             temperature=0.2,
+            max_tokens=_settings.llm_max_tokens,
         )
     except Exception:
         resp = _groq_client.chat.completions.create(
             model=_settings.groq_model,
             messages=messages,
             temperature=0.2,
+            max_tokens=_settings.groq_max_tokens,
         )
     return resp.choices[0].message.content.strip()
