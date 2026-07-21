@@ -11,3 +11,5 @@ pytest>=8.0.0
 httpx>=0.26.0
 python-jobspy>=1.1.79
 pandas>=2.0.0
+langgraph>=0.2.0
+sentence-transformers>=3.0.0
