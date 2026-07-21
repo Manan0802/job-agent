@@ -19,7 +19,9 @@ def test_complete_requests_enough_output_tokens():
 
 
 def test_groq_fallback_also_requests_enough_output_tokens():
-    with patch.object(router, "_client") as primary, patch.object(router, "_groq_client") as groq:
+    with patch.object(router, "_client") as primary, \
+         patch.object(router, "_groq_client") as groq, \
+         patch.object(router.time, "sleep"):
         primary.chat.completions.create.side_effect = Exception("gemini 503")
         groq.chat.completions.create.return_value = _fake_response()
         router.complete("parse this resume")

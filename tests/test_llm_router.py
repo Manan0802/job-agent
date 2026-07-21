@@ -18,7 +18,8 @@ def test_complete_falls_back_to_groq_on_error():
     fake = MagicMock()
     fake.choices = [MagicMock(message=MagicMock(content="from groq"))]
     with patch.object(router, "_client") as primary, \
-         patch.object(router, "_groq_client") as fallback:
+         patch.object(router, "_groq_client") as fallback, \
+         patch.object(router.time, "sleep"):
         primary.chat.completions.create.side_effect = Exception("rate limited")
         fallback.chat.completions.create.return_value = fake
         out = router.complete("say hi")

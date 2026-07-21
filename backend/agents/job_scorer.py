@@ -15,6 +15,9 @@ log = logging.getLogger(__name__)
 
 _MAX_ATTEMPTS = 3
 _DESCRIPTION_CHARS = 2000
+# A score reply runs a few hundred tokens; reserving more throttles Groq, which
+# counts max_tokens against its per-minute admission budget.
+_SCORE_MAX_TOKENS = 1200
 
 SYSTEM_PROMPT = (
     "You judge how well a candidate fits a job. Return ONLY a valid JSON object, "
@@ -70,7 +73,7 @@ def score_job(job: dict, profile: Profile) -> JobScore:
     last_error: Exception | None = None
     for _ in range(_MAX_ATTEMPTS):
         try:
-            raw = complete(prompt, system=SYSTEM_PROMPT)
+            raw = complete(prompt, system=SYSTEM_PROMPT, max_tokens=_SCORE_MAX_TOKENS)
             return JobScore.model_validate(json.loads(_strip_fences(raw)))
         except Exception as exc:
             last_error = exc
