@@ -45,7 +45,7 @@ Strict TDD throughout: write test → run to fail → implement → run to pass 
 - [ ] **Task 5 — Embedding + pre-filter.** `backend/services/embeddings.py`: `embed_text(text) -> bytes` (via `sentence-transformers`, model `BAAI/bge-small-en-v1.5`, cached model load), `cosine_similarity(a: bytes, b: bytes) -> float`, `prefilter_jobs(jobs, profile_embedding, top_n=15) -> list[dict]`. Mock the model in tests (no real model download in test suite — keeps tests fast and offline).
 - [ ] **Task 6 — LLM job scorer.** `backend/agents/job_scorer.py`: `score_job(job: dict, profile: Profile) -> dict` (returns `{"score": float, "breakdown": str}`) using `backend.llm.router.complete`. Mock `complete` in tests.
 - [ ] **Task 7 — Telegram notifier.** `backend/services/notify.py`: `send_telegram_alert(message: str) -> None`, reads `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID` from settings, posts to `https://api.telegram.org/bot<token>/sendMessage`. Mock `httpx.post` in tests.
-- [ ] **Task 8 — YC workatastartup source (login-based).** `backend/services/job_sources/yc_adapter.py`: wraps `waasuapi`, reads `YC_EMAIL`/`YC_PASSWORD` from `.env` (never hardcoded, never committed), tags `source_engine='yc'`. Mock the scraper client in tests — this task also documents the login exception inline as a code comment pointing at the safety-rule note in the design doc.
+- [x] **Task 8 — YC startup jobs (no login needed after all).** `backend/services/job_sources/yc_adapter.py`. The plan assumed `waasuapi`, which needs real credentials plus Selenium/Chromedriver and was last updated in Aug 2024 (its own commit message says "please fix chromedriver pathing"). It turned out YC's public job pages embed their listings as JSON in the HTML, so the adapter reads them over plain HTTP: **no login, no browser, no stale dependency, and no exception to the "no authenticated scraping" rule**. Coverage comes from several public filter pages (`/jobs`, `/jobs/role/eng`, `/jobs/role/design`, `/jobs/location/remote`) since each returns a different slice and there is no pagination. Verified live: 92 unique jobs, all with title + company + url.
 - [ ] **Task 9 — LangGraph orchestration.** `backend/agents/job_hunter_graph.py`: a `StateGraph` with nodes `ingest → dedup → prefilter → score → save → notify`, using `langgraph`'s in-memory or SQLite checkpointer. Test the graph end-to-end with all external calls mocked.
 - [ ] **Task 10 — FastAPI trigger endpoint.** `backend/api/routes/jobs.py`: `POST /api/v1/jobs/hunt` (runs the graph, returns job count + top matches), `GET /api/v1/jobs` (list saved jobs, sorted by `llm_score`).
 
@@ -53,10 +53,9 @@ Strict TDD throughout: write test → run to fail → implement → run to pass 
 ```
 TELEGRAM_BOT_TOKEN=
 TELEGRAM_CHAT_ID=
-YC_EMAIL=
-YC_PASSWORD=
 EMBEDDING_MODEL=BAAI/bge-small-en-v1.5
 ```
+(`YC_EMAIL`/`YC_PASSWORD` are not needed — see Task 8.)
 
 ## Phase 2 Deliverable
 Running the job-hunt endpoint pulls jobs from LinkedIn/Naukri/Indeed/Glassdoor/Bayt (via JobSpy, no login), Remotive/RemoteOK/Arbeitnow/Himalayas/Jobicy (free APIs), and YC workatastartup (via the user's own login) — dedupes, pre-filters cheaply with local embeddings, scores the top ~15 with the free LLM, saves to SQLite, and pings Telegram with the count and top matches.
