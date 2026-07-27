@@ -37,6 +37,23 @@ def save_contacts(contacts: list[dict]) -> None:
         session.commit()
 
 
+def get_contact(contact_id: str) -> dict | None:
+    with get_session() as session:
+        row = session.get(ContactRow, contact_id)
+        if row is None:
+            return None
+        return {"id": row.id, "outreach_status": row.outreach_status,
+                **{column: getattr(row, column) for column in _COLUMNS}}
+
+
+def set_outreach_status(contact_id: str, status: str) -> None:
+    with get_session() as session:
+        row = session.get(ContactRow, contact_id)
+        if row is not None:
+            row.outreach_status = status
+            session.commit()
+
+
 def load_contacts(company: str | None = None) -> list[dict]:
     """Warmest first."""
     statement = select(ContactRow)

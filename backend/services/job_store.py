@@ -36,6 +36,14 @@ def save_jobs(jobs: list[dict]) -> None:
         session.commit()
 
 
+def get_job(job_id: str) -> dict | None:
+    with get_session() as session:
+        row = session.get(JobRow, job_id)
+        if row is None:
+            return None
+        return {"id": row.id, **{column: getattr(row, column) for column in _COLUMNS}}
+
+
 def load_jobs(limit: int | None = None) -> list[dict]:
     """Best-scored first; unscored jobs sort last."""
     with get_session() as session:
