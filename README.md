@@ -28,39 +28,67 @@ Then, for depth:
 ```bash
 git clone https://github.com/Manan0802/job-agent
 cd job-agent
-python -m venv .venv
-.venv\Scripts\activate          # Windows  (Mac/Linux: source .venv/bin/activate)
+
+python3 -m venv .venv
+source .venv/bin/activate       # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-copy .env.example .env          # then paste a free OpenRouter key into LLM_API_KEY
-python -m pytest -v             # all tests should pass
+
+cp .env.example .env            # then paste your free Gemini key into LLM_API_KEY
+
+cd frontend && npm install && npm run build && cd ..
+uvicorn backend.main:app --reload
 ```
 
-Get a free LLM key at **https://openrouter.ai**.
+Open **http://localhost:8000** for the app, or `/docs` for the API.
+
+Only one key is required to start: a free Gemini key from
+[aistudio.google.com/apikey](https://aistudio.google.com/apikey) (no card).
+Everything below is optional and the app degrades gracefully without it:
+
+| Add | Unlocks | Where |
+|---|---|---|
+| `GROQ_API_KEY` | Automatic fallback when Gemini is busy | [console.groq.com/keys](https://console.groq.com/keys) |
+| `SERPER_API_KEY` | Finding people you *don't* already know | [serper.dev](https://serper.dev) — 2,500 free, no card |
+| `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID` | Job alerts on your phone | @BotFather on Telegram |
+| `data/connections/Connections.csv` | People you already know at a company | LinkedIn → Settings → Get a copy of your data |
+
+Working on the UI itself? `cd frontend && npm run dev` gives hot reload on
+port 5173 and proxies the API to 8000.
 
 ---
 
 ## 🏗️ Status
 
-**Phase 1 — Foundation** (in progress, strict TDD):
+All six phases are built, with **263 tests** and every stage verified against
+live data rather than mocks.
 
-- [x] Project scaffold + config loader
-- [x] SQLite database + profiles model
-- [x] Free‑first LLM router
-- [ ] PDF → markdown (markitdown)
-- [ ] Profile schema + resume parser
-- [ ] FastAPI app + resume upload endpoint
-- [ ] Profile edit endpoint
+| Phase | What it does |
+|---|---|
+| 1 · Foundation | Resume PDF → structured profile everything else reads |
+| 2 · Job Hunter | Scrapes every board, ranks locally, scores the shortlist with an LLM |
+| 3 · Referral Finder | Who could refer you into a company, warmest first, with reasons |
+| 4 · Outreach | Drafts a personal message per contact; you approve and send |
+| 5 · Tracker | Pipeline, follow-up reminders, response rate by source |
+| 6 · UI | The whole thing in a browser, served by the same backend |
 
-**Roadmap:** Phase 2 Job Hunter → 3 Referral Finder → 4 Outreach → 5 Tracker CRM → 6 React UI → v2 (resume tailoring, interview prep).
-See the [PROJECT_GUIDE](docs/PROJECT_GUIDE.md#10-the-roadmap-what-comes-after-phase-1).
+Deferred to v2: resume tailoring per job, interview prep.
+
+**Two rules the code enforces:** nothing sends on your behalf, and no
+authenticated scraping. `backend/services/send_links.py` even has a test
+asserting it never grows a `send_*` function.
 
 ---
 
 ## 🧰 Built on (the "reuse, don't reinvent" stack)
 
-JobSpy · Remotive/RemoteOK/Arbeitnow/Himalayas APIs · camofox-browser (anti‑detect) ·
-SerpApi (referrals) · markitdown · career-ops (v2 tailoring) · sentence‑transformers (free scoring).
+JobSpy · Remotive/RemoteOK/Arbeitnow/Himalayas/Jobicy APIs · YC public listings ·
+Serper + SerpApi (referral search) · markitdown · sentence‑transformers (free local ranking) ·
+LangGraph · React + Tailwind.
 Full ledger of *what we take from each* is in the [PROJECT_GUIDE](docs/PROJECT_GUIDE.md#5-the-tool-ledger--every-repo-we-researched-basic--max-and-what-we-take-from-each).
+
+Each phase has a write-up covering what shipped, what deviated from the plan,
+and the bugs that only appeared against real data — see
+[`docs/superpowers/plans/`](docs/superpowers/plans/).
 
 ---
 
