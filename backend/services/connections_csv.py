@@ -8,24 +8,13 @@ Get a copy of your data → Connections → Download.
 import csv
 import logging
 import os
-import re
+
+from backend.utils.text import normalize_company
 
 log = logging.getLogger(__name__)
 
 _EXPECTED_HEADER = "first name"
 _MAX_PREAMBLE_LINES = 10
-
-# Legal suffixes differ between a job posting and a CSV row for the same employer.
-_COMPANY_NOISE = re.compile(
-    r"\b(private|pvt|limited|ltd|llp|inc|incorporated|corp|corporation|"
-    r"technologies|technology|labs|solutions|services|india|co)\b\.?",
-    re.IGNORECASE,
-)
-
-
-def _normalize_company(name: str | None) -> str:
-    cleaned = _COMPANY_NOISE.sub(" ", name or "")
-    return " ".join(re.sub(r"[^\w\s]", " ", cleaned).split()).lower()
 
 
 def _open_at_header(path: str):
@@ -75,11 +64,11 @@ def load_connections(path: str) -> list[dict]:
 
 
 def find_connections_at(path: str, company: str) -> list[dict]:
-    target = _normalize_company(company)
+    target = normalize_company(company)
     if not target:
         return []
     return [
         contact for contact in load_connections(path)
-        if (normalized := _normalize_company(contact["current_company"]))
+        if (normalized := normalize_company(contact["current_company"]))
         and (target in normalized or normalized in target)
     ]
