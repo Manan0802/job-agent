@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { ArrowSquareOutIcon, MagnifyingGlassIcon, PlusIcon } from "@phosphor-icons/react";
-import { api, ApiError, type Job } from "@/lib/api";
+import { ArrowSquareOutIcon, MagnifyingGlassIcon, PlusIcon, SparkleIcon } from "@phosphor-icons/react";
+import { api, ApiError, type FitAnalysis, type Job } from "@/lib/api";
 import { useAsync } from "@/lib/useAsync";
 import { Button, Card, Empty, ErrorNote, Loading, Pill, SectionHeader } from "@/components/ui";
 import { cn } from "@/lib/cn";
+import { FitPanel } from "@/components/FitPanel";
 import type { ViewProps } from "@/lib/view";
 
 function scoreTone(score: number | null) {
@@ -15,10 +16,27 @@ function scoreTone(score: number | null) {
 
 function JobCard({ job, onTrack }: { job: Job; onTrack: (job: Job) => void }) {
   const [tracked, setTracked] = useState(false);
+  const [fit, setFit] = useState<FitAnalysis | null>(null);
+  const [tailoring, setTailoring] = useState(false);
+  const [fitError, setFitError] = useState<string | null>(null);
   const reasons = job.llm_breakdown ? JSON.parse(job.llm_breakdown) : null;
 
+  async function tailor() {
+    if (fit) return setFit(null);
+    setTailoring(true);
+    setFitError(null);
+    try {
+      setFit(await api.analyzeFit(job.id));
+    } catch (e) {
+      setFitError(e instanceof ApiError ? e.message : "Could not analyse this one");
+    } finally {
+      setTailoring(false);
+    }
+  }
+
   return (
-    <Card className="px-4 py-3.5">
+    <Card className="overflow-hidden">
+      <div className="px-4 py-3.5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="truncate font-medium">{job.title}</h3>
@@ -82,10 +100,22 @@ function JobCard({ job, onTrack }: { job: Job; onTrack: (job: Job) => void }) {
             Open <ArrowSquareOutIcon size={14} />
           </a>
         )}
+        <Button size="sm" variant="ghost" disabled={tailoring} onClick={tailor}>
+          <SparkleIcon size={14} />
+          {tailoring ? "Reading…" : fit ? "Hide" : "Tailor"}
+        </Button>
         {job.source_engine && (
           <span className="ml-auto text-[11px] text-ink-faint">{job.source_engine}</span>
         )}
       </div>
+      </div>
+
+      {fitError && (
+        <p className="border-t bg-critical-soft px-4 py-2.5 text-[13px] text-critical">
+          {fitError}
+        </p>
+      )}
+      {fit && <FitPanel fit={fit} />}
     </Card>
   );
 }

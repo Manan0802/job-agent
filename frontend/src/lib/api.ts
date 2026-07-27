@@ -101,6 +101,24 @@ export type SetupItem = {
 
 export type Setup = { ready: boolean; items: SetupItem[]; embedding_model: string };
 
+export type Suggestion = {
+  section: string;
+  change: string;
+  why: string;
+  /** Words the edit borrowed from the posting that your resume never backs. */
+  unsupported: string[];
+};
+
+export type FitAnalysis = {
+  job: { id: string; title: string | null; company: string | null };
+  verdict: string;
+  strengths: string[];
+  buried: string[];
+  missing: string[];
+  suggestions: Suggestion[];
+  has_unsupported: boolean;
+};
+
 export class ApiError extends Error {}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -185,4 +203,7 @@ export const api = {
   stats: () => request<Stats>("/api/v1/applications/stats"),
 
   setup: () => request<Setup>("/api/v1/setup"),
+
+  analyzeFit: (jobId: string) =>
+    post<FitAnalysis>("/api/v1/tailor/analyze", { job_id: jobId }),
 };

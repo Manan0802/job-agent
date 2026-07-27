@@ -1,4 +1,5 @@
 import json
+from backend.llm.errors import ModelUnavailable
 from backend.llm.router import complete
 from backend.utils.pdf_parser import pdf_to_markdown
 from backend.schemas.profile import Profile
@@ -49,7 +50,7 @@ def parse_resume_markdown(markdown: str) -> Profile:
             return Profile.model_validate(json.loads(_strip_fences(raw)))
         except Exception as exc:
             last_error = exc
-    raise ValueError(
+    raise ModelUnavailable(
         f"could not parse resume into a profile after {_MAX_ATTEMPTS} attempts: {last_error}"
     )
 

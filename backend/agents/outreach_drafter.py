@@ -11,6 +11,7 @@ Nothing here sends anything. The draft goes to the user for review.
 import json
 import logging
 
+from backend.llm.errors import ModelUnavailable
 from backend.llm.router import complete
 from backend.schemas.outreach import OutreachDraft
 from backend.schemas.profile import Profile
@@ -165,7 +166,7 @@ def draft_message(contact: dict, profile: Profile, job: dict | None = None,
         except Exception as exc:
             last_error = exc
 
-    raise ValueError(
+    raise ModelUnavailable(
         f"could not draft a {message_type} for {contact.get('name')!r} "
         f"after {_MAX_ATTEMPTS} attempts: {last_error}"
     )

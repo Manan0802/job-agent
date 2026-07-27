@@ -7,6 +7,7 @@ before anything reaches here.
 import json
 import logging
 
+from backend.llm.errors import ModelUnavailable
 from backend.llm.router import complete
 from backend.schemas.job_score import JobScore
 from backend.schemas.profile import Profile
@@ -77,7 +78,7 @@ def score_job(job: dict, profile: Profile) -> JobScore:
             return JobScore.model_validate(json.loads(_strip_fences(raw)))
         except Exception as exc:
             last_error = exc
-    raise ValueError(
+    raise ModelUnavailable(
         f"could not score job {job.get('title')!r} after {_MAX_ATTEMPTS} attempts: {last_error}"
     )
 
