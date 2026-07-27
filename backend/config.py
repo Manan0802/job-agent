@@ -14,6 +14,13 @@ class Settings(BaseSettings):
     embedding_model: str = "BAAI/bge-small-en-v1.5"
     telegram_bot_token: str = ""
     telegram_chat_id: str = ""
+    # People search for referrals. Serper's free grant is one-time (2,500) and
+    # SerpApi's resets monthly (250), so Serper leads and SerpApi is the floor.
+    serper_api_key: str = ""
+    serper_monthly_cap: int = 2500
+    serpapi_api_key: str = ""
+    serpapi_monthly_cap: int = 250
+    linkedin_connections_csv: str = "./data/connections/Connections.csv"
     # Unset, providers truncated resume JSON mid-string. Reasoning models spend
     # part of this budget before emitting any answer, so keep it generous.
     llm_max_tokens: int = 8000
