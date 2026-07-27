@@ -58,6 +58,29 @@ class ContactRow(Base):
     created_at: Mapped[str | None] = mapped_column(nullable=True)
 
 
+class MessageRow(Base):
+    """One outreach message and where it is in the user's review flow.
+
+    Nothing here is sent automatically: `status` moves draft → approved → sent
+    only on the user's own action.
+    """
+
+    __tablename__ = "outreach_messages"
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    contact_id: Mapped[str | None] = mapped_column(nullable=True)
+    job_id: Mapped[str | None] = mapped_column(nullable=True)
+    message_type: Mapped[str | None] = mapped_column(nullable=True)
+    channel: Mapped[str | None] = mapped_column(nullable=True)   # linkedin_dm | email
+    subject: Mapped[str | None] = mapped_column(nullable=True)   # None for DMs
+    body: Mapped[str | None] = mapped_column(nullable=True)
+    tone: Mapped[str | None] = mapped_column(nullable=True)
+    personalization: Mapped[str | None] = mapped_column(nullable=True)  # JSON text
+    status: Mapped[str] = mapped_column(default="draft")
+    created_at: Mapped[str | None] = mapped_column(nullable=True)
+    sent_at: Mapped[str | None] = mapped_column(nullable=True)
+
+
 class ApiBudgetRow(Base):
     __tablename__ = "api_budget"
 
