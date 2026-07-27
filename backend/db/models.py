@@ -31,6 +31,33 @@ class JobRow(Base):
     fetched_at: Mapped[str | None] = mapped_column(nullable=True)
 
 
+class ContactRow(Base):
+    """A person who could refer the user into a company.
+
+    The PRD also listed phone, mutual_connections, outreach_message_id and
+    notes; those are omitted because their only data source was Proxycurl,
+    which shut down in 2025.
+    """
+
+    __tablename__ = "referral_contacts"
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    target_company: Mapped[str | None] = mapped_column(nullable=True)
+    name: Mapped[str | None] = mapped_column(nullable=True)
+    linkedin_url: Mapped[str | None] = mapped_column(nullable=True)
+    current_role: Mapped[str | None] = mapped_column(nullable=True)
+    current_company: Mapped[str | None] = mapped_column(nullable=True)
+    location: Mapped[str | None] = mapped_column(nullable=True)
+    education: Mapped[str | None] = mapped_column(nullable=True)     # JSON text
+    degree_type: Mapped[str | None] = mapped_column(nullable=True)   # '1st' | '2nd'
+    warmth_score: Mapped[int | None] = mapped_column(nullable=True)  # 1-5
+    warmth_reasons: Mapped[str | None] = mapped_column(nullable=True)  # JSON text
+    email: Mapped[str | None] = mapped_column(nullable=True)
+    source: Mapped[str | None] = mapped_column(nullable=True)        # 'csv' | 'search'
+    outreach_status: Mapped[str] = mapped_column(default="pending")
+    created_at: Mapped[str | None] = mapped_column(nullable=True)
+
+
 class ApiBudgetRow(Base):
     __tablename__ = "api_budget"
 

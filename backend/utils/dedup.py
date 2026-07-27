@@ -20,6 +20,18 @@ def job_id(company: str | None, title: str | None) -> str:
     return hashlib.sha256(key.encode("utf-8")).hexdigest()
 
 
+def contact_id(linkedin_url: str | None, name: str | None, company: str | None) -> str:
+    """Identify a person by their profile URL when there is one.
+
+    The same contact can arrive from the user's CSV export and from a search;
+    the profile URL is what proves they are the same person. LinkedIn's export
+    often omits it, so name+company is the fallback.
+    """
+    url = _norm(linkedin_url).rstrip("/")
+    key = url or f"{_norm(name)}|{_norm(company)}"
+    return hashlib.sha256(key.encode("utf-8")).hexdigest()
+
+
 def dedupe_jobs(jobs: list[dict]) -> list[dict]:
     """Assign each job its id and keep only the first copy of each."""
     seen: set[str] = set()
