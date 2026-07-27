@@ -85,11 +85,16 @@ def score_contact(contact: dict, profile: Profile) -> tuple[int, list[str]]:
         score = 1
         reasons.append(f"works at {contact.get('current_company') or 'the company'}")
 
+    # Seniority counts for everyone, not just strangers: the LinkedIn export
+    # carries no education, so without this every connection ties and the
+    # ranking says nothing. A manager can approve a referral; a junior usually
+    # cannot.
+    role = contact.get("current_role") or ""
+    if _SENIOR_TITLES.search(role):
+        score = min(score + 1, 5)
+        reasons.append(f"senior enough to refer ({role})")
+
     if not is_connection and not alumni:
-        role = contact.get("current_role") or ""
-        if _SENIOR_TITLES.search(role):
-            score = max(score, 2)
-            reasons.append(f"senior enough to refer ({role})")
         shared = _shared_stack(contact, profile)
         if shared:
             score = max(score, 2)

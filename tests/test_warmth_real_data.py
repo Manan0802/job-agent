@@ -57,6 +57,18 @@ def test_shared_employer_matches_despite_the_legal_suffix():
     assert any("indiamart" in r.lower() for r in reasons), reasons
 
 
+def test_seniority_separates_people_you_already_know():
+    """The LinkedIn export carries no education, so without this every
+    connection ties at the same score and the ranking says nothing. A manager
+    can approve a referral; a junior engineer usually cannot."""
+    manager, _ = score_contact(
+        _contact(degree_type="1st", current_role="Engineering Manager"), REAL)
+    junior, _ = score_contact(
+        _contact(degree_type="1st", current_role="SDE-1"), REAL)
+
+    assert manager > junior
+
+
 def test_a_recruiter_stranger_stays_the_coldest_lead():
     ranked = sorted(
         [

@@ -5,8 +5,11 @@ __pycache__/
 data/db/*.db
 data/profile/*.json
 data/resume/*
+# Your LinkedIn export holds other people's names, employers and emails
+data/connections/*
 .pytest_cache/
 *.pdf
+*.csv
 .DS_Store
 .claude
 .mcp.json
