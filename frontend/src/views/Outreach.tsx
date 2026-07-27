@@ -169,7 +169,7 @@ export function Outreach({ onGoTo }: { onGoTo: (view: never) => void }) {
                 ))}
               </div>
             ) : (
-              <Empty title="All caught up" hint="Nothing is waiting for your review." />
+              <Empty quiet title="All caught up." hint="Nothing is waiting for your review." />
             )}
           </section>
 

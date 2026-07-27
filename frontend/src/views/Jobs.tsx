@@ -91,7 +91,11 @@ function JobCard({ job, onTrack }: { job: Job; onTrack: (job: Job) => void }) {
 
 export function Jobs({ profile }: { profile: Profile }) {
   const saved = useAsync(() => api.listJobs(50), []);
-  const [term, setTerm] = useState(profile.keywords?.[0] ?? "software engineer");
+  // The most recent job title beats a bare keyword: profile.keywords[0] was
+  // "AI", which is too broad to return anything useful.
+  const [term, setTerm] = useState(
+    profile.experience?.find((e) => e.role)?.role ?? profile.keywords?.[0] ?? "software engineer",
+  );
   const [location, setLocation] = useState(profile.personal.location ?? "India");
   const [hunting, setHunting] = useState(false);
   const [huntError, setHuntError] = useState<string | null>(null);

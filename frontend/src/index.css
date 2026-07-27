@@ -36,6 +36,9 @@
   --color-accent: oklch(0.52 0.09 195);
   --color-accent-soft: oklch(0.955 0.018 195);
   --color-accent-ink: oklch(0.36 0.08 195);
+  /* Text sitting ON the accent. It flips with the theme, because the accent is
+     dark in light mode and light in dark mode. */
+  --color-on-accent: oklch(0.99 0 0);
 
   --color-attention: oklch(0.55 0.13 62);
   --color-attention-soft: oklch(0.96 0.03 62);
@@ -69,6 +72,7 @@
     --color-accent: oklch(0.74 0.1 195);
     --color-accent-soft: oklch(0.29 0.04 195);
     --color-accent-ink: oklch(0.84 0.08 195);
+    --color-on-accent: oklch(0.17 0.01 195);
 
     --color-attention: oklch(0.78 0.12 62);
     --color-attention-soft: oklch(0.3 0.045 62);

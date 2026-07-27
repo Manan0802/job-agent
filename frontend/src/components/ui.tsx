@@ -63,7 +63,7 @@ export function Button({
         "transition-[transform,background-color,border-color] active:translate-y-px",
         "disabled:pointer-events-none disabled:opacity-45",
         size === "sm" ? "h-8 px-2.5 text-[13px]" : "h-9 px-3.5 text-sm",
-        variant === "primary" && "bg-accent text-white hover:opacity-90",
+        variant === "primary" && "bg-accent text-on-accent hover:opacity-90",
         variant === "secondary" && "border bg-surface text-ink hover:bg-sunken",
         variant === "ghost" && "text-ink-soft hover:bg-sunken hover:text-ink",
         className,
@@ -118,13 +118,26 @@ export function Empty({
   title,
   hint,
   action,
+  /** "Nothing overdue" is good news; it should not take up as much room as a
+      section the user still has to go and fill. */
+  quiet,
 }: {
   title: string;
   hint?: string;
   action?: ReactNode;
+  quiet?: boolean;
 }) {
+  if (quiet) {
+    return (
+      <Card className="flex flex-wrap items-baseline gap-x-2 gap-y-1 px-4 py-3">
+        <p className="text-sm font-medium">{title}</p>
+        {hint && <p className="text-sm text-ink-soft">{hint}</p>}
+      </Card>
+    );
+  }
+
   return (
-    <Card className="grid justify-items-center gap-3 px-6 py-12 text-center">
+    <Card className="grid justify-items-center gap-3 px-6 py-10 text-center">
       <p className="font-medium">{title}</p>
       {hint && <p className="max-w-[46ch] text-sm text-ink-soft">{hint}</p>}
       {action}

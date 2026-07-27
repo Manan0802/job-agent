@@ -44,8 +44,10 @@ function ApplicationCard({
   const next = NEXT_STAGE[application.status];
 
   return (
-    <Card className="px-3 py-2.5">
-      <p className="truncate text-[13px] font-medium">{application.role_title}</p>
+    <Card className="min-w-0 px-3 py-2.5">
+      <p className="truncate text-[13px] font-medium" title={application.role_title ?? ""}>
+        {application.role_title}
+      </p>
       <p className="mt-0.5 truncate text-[13px] text-ink-soft">{application.company_name}</p>
 
       {application.offer_amount ? (
@@ -128,11 +130,13 @@ export function Pipeline({ onGoTo }: { onGoTo: (view: never) => void }) {
         <>
           {/* Horizontal on desktop, a readable stack on a phone. */}
           <div className="-mx-4 overflow-x-auto px-4 pb-2">
-            <div className="grid min-w-[900px] grid-cols-6 gap-3">
+            <div className="grid min-w-[1140px] grid-cols-6 gap-3">
               {COLUMNS.map((column) => {
                 const cards = all.filter((a) => a.status === column.id);
                 return (
-                  <section key={column.id} aria-label={column.label}>
+                  /* Grid items default to min-width:auto, so without min-w-0 a
+                     long job title pushes the card out over its neighbours. */
+                  <section key={column.id} aria-label={column.label} className="min-w-0">
                     <h2 className="mb-2 flex items-baseline gap-1.5 px-0.5 text-[13px] font-medium">
                       {column.label}
                       <span className="tabular text-ink-faint">{cards.length}</span>

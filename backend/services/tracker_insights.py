@@ -88,8 +88,11 @@ def pipeline_stats() -> dict:
     for bucket in by_source.values():
         bucket["response_rate"] = _rate(bucket["responded"], bucket["applied"])
 
+    # A source has to have actually produced a reply to be called the best one;
+    # otherwise "best: arbeitnow" sits next to a 0% response rate.
+    answering = {name: b for name, b in by_source.items() if b["responded"]}
     best_source = max(
-        by_source.items(),
+        answering.items(),
         key=lambda item: (item[1]["response_rate"], item[1]["applied"]),
         default=(None, None),
     )[0]

@@ -170,6 +170,18 @@ def test_stats_name_the_source_that_actually_gets_replies(db):
     assert stats["by_source"]["jobspy:linkedin"]["response_rate"] == pytest.approx(0.0)
 
 
+def test_no_source_is_called_best_until_one_actually_gets_a_reply(db):
+    """The UI showed 'best: arbeitnow' next to a 0% response rate. With nothing
+    answered yet, no source has earned the label."""
+    for i, source in enumerate(("arbeitnow", "yc")):
+        app_id = track_job(_job(f"j{i}", company=f"Co{i}", source=source))
+        move_stage(app_id, "applied")
+
+    stats = pipeline_stats()
+    assert stats["response_rate"] == 0.0
+    assert stats["best_source"] is None
+
+
 def test_a_source_you_never_applied_through_cannot_be_the_best(db):
     """One saved-but-never-applied job should not win on an empty record."""
     track_job(_job("j1", source="never_applied"))

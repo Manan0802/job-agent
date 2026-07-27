@@ -59,8 +59,9 @@ export function Today({ profile, onGoTo }: Props) {
           </div>
         ) : (
           <Empty
-            title="Nothing overdue"
-            hint="Every application you're tracking has been touched recently."
+            quiet
+            title="Nothing overdue."
+            hint="Everything you're tracking has been touched recently."
           />
         )}
       </section>

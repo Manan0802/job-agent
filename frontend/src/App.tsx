@@ -29,6 +29,27 @@ const VIEWS = [
 
 type ViewId = (typeof VIEWS)[number]["id"];
 
+const IDS = VIEWS.map((v) => v.id) as readonly string[];
+
+/** Keep the view in the URL so a refresh stays put, links are shareable, and
+    the browser's back button does what it looks like it should. */
+function useView() {
+  const read = () => {
+    const id = window.location.hash.replace("#", "");
+    return (IDS.includes(id) ? id : "today") as ViewId;
+  };
+
+  const [view, setView] = useState<ViewId>(read);
+
+  useEffect(() => {
+    const sync = () => setView(read());
+    window.addEventListener("hashchange", sync);
+    return () => window.removeEventListener("hashchange", sync);
+  }, []);
+
+  return [view, (next: ViewId) => { window.location.hash = next; }] as const;
+}
+
 function useTheme() {
   const [dark, setDark] = useState(
     () =>
@@ -46,7 +67,7 @@ function useTheme() {
 }
 
 export default function App() {
-  const [view, setView] = useState<ViewId>("today");
+  const [view, setView] = useView();
   const { dark, toggle } = useTheme();
   // Everything downstream reads the profile, so this is the app's entry gate.
   const profile = useAsync(() => api.getProfile(), []);
