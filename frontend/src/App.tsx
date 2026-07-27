@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import type { Icon } from "@phosphor-icons/react";
 import {
   BriefcaseIcon,
   ChatCircleTextIcon,
+  GearIcon,
   KanbanIcon,
   MoonIcon,
   SunIcon,
@@ -11,23 +13,31 @@ import {
 import { api } from "@/lib/api";
 import { useAsync } from "@/lib/useAsync";
 import { cn } from "@/lib/cn";
+import type { ViewId, ViewProps } from "@/lib/view";
 import { Loading } from "@/components/ui";
 import { Today } from "@/views/Today";
 import { Jobs } from "@/views/Jobs";
 import { Referrals } from "@/views/Referrals";
 import { Outreach } from "@/views/Outreach";
 import { Pipeline } from "@/views/Pipeline";
+import { Settings } from "@/views/Settings";
 import { ResumeGate } from "@/views/ResumeGate";
 
-const VIEWS = [
+// Typing `id` as ViewId means a nav entry with an id the rest of the app does
+// not know about fails the build rather than silently rendering nothing.
+const VIEWS: readonly {
+  id: ViewId;
+  label: string;
+  Icon: Icon;
+  View: (props: ViewProps) => ReactNode;
+}[] = [
   { id: "today", label: "Today", Icon: TargetIcon, View: Today },
   { id: "jobs", label: "Jobs", Icon: BriefcaseIcon, View: Jobs },
   { id: "referrals", label: "Referrals", Icon: UsersThreeIcon, View: Referrals },
   { id: "outreach", label: "Outreach", Icon: ChatCircleTextIcon, View: Outreach },
   { id: "pipeline", label: "Pipeline", Icon: KanbanIcon, View: Pipeline },
-] as const;
-
-type ViewId = (typeof VIEWS)[number]["id"];
+  { id: "setup", label: "Setup", Icon: GearIcon, View: Settings },
+];
 
 const IDS = VIEWS.map((v) => v.id) as readonly string[];
 
@@ -116,7 +126,11 @@ export default function App() {
         {profile.loading ? (
           <Loading rows={4} />
         ) : profile.data ? (
-          <Active profile={profile.data} onGoTo={setView} />
+          <Active
+            profile={profile.data}
+            onGoTo={setView}
+            onProfileChanged={profile.reload}
+          />
         ) : (
           <ResumeGate onLoaded={profile.reload} />
         )}

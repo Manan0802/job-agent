@@ -1,9 +1,10 @@
 import { ArrowRightIcon } from "@phosphor-icons/react";
-import { api, type Profile } from "@/lib/api";
+import { api } from "@/lib/api";
 import { useAsync } from "@/lib/useAsync";
 import { Button, Card, Empty, ErrorNote, Loading, Pill, SectionHeader } from "@/components/ui";
+import type { ViewProps } from "@/lib/view";
 
-type Props = { profile: Profile; onGoTo: (view: never) => void };
+type Props = ViewProps;
 
 function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
@@ -69,7 +70,7 @@ export function Today({ profile, onGoTo }: Props) {
       <section>
         <SectionHeader title="Drafts waiting for you" count={drafts.data?.count}>
           {!!drafts.data?.count && (
-            <Button size="sm" onClick={() => onGoTo("outreach" as never)}>
+            <Button size="sm" onClick={() => onGoTo("outreach")}>
               Review <ArrowRightIcon size={14} />
             </Button>
           )}
@@ -92,7 +93,7 @@ export function Today({ profile, onGoTo }: Props) {
             title="No drafts right now"
             hint="Find someone who can refer you, then draft a message to them."
             action={
-              <Button size="sm" onClick={() => onGoTo("referrals" as never)}>
+              <Button size="sm" onClick={() => onGoTo("referrals")}>
                 Find referrals
               </Button>
             }
@@ -126,7 +127,7 @@ export function Today({ profile, onGoTo }: Props) {
             title="Nothing tracked yet"
             hint="Once you start tracking jobs, your response rate and best source show up here."
             action={
-              <Button size="sm" onClick={() => onGoTo("jobs" as never)}>
+              <Button size="sm" onClick={() => onGoTo("jobs")}>
                 Find jobs
               </Button>
             }

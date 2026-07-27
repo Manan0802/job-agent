@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from backend.api.routes import applications, jobs, outreach, referrals, resume
+from backend.api.routes import applications, jobs, outreach, referrals, resume, setup
 from backend.db.database import init_db
 
 app = FastAPI(title="Job + Referral Finder")
@@ -20,6 +20,7 @@ app.include_router(jobs.router)
 app.include_router(referrals.router)
 app.include_router(outreach.router)
 app.include_router(applications.router)
+app.include_router(setup.router)
 
 
 @app.get("/health")

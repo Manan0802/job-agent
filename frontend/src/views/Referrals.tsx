@@ -4,6 +4,7 @@ import { api, ApiError, type Contact } from "@/lib/api";
 import { useAsync } from "@/lib/useAsync";
 import { Button, Card, Empty, ErrorNote, Loading, Pill, SectionHeader } from "@/components/ui";
 import { cn } from "@/lib/cn";
+import type { ViewProps } from "@/lib/view";
 
 /** Warmth is a 1-5 scale, so it reads as a scale rather than a number. */
 function Warmth({ score }: { score: number }) {
@@ -83,7 +84,7 @@ function ContactCard({
   );
 }
 
-export function Referrals({ onGoTo }: { onGoTo: (view: never) => void }) {
+export function Referrals({ onGoTo }: ViewProps) {
   const saved = useAsync(() => api.listReferrals(), []);
   const [company, setCompany] = useState("");
   const [role, setRole] = useState("");
@@ -112,7 +113,7 @@ export function Referrals({ onGoTo }: { onGoTo: (view: never) => void }) {
     setError(null);
     try {
       await api.draftOutreach(contact.id);
-      onGoTo("outreach" as never);
+      onGoTo("outreach");
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Could not write that message");
     } finally {

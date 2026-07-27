@@ -3,6 +3,7 @@ import { ArrowSquareOutIcon, CheckIcon, CopyIcon, XIcon } from "@phosphor-icons/
 import { api, ApiError, type Message } from "@/lib/api";
 import { useAsync } from "@/lib/useAsync";
 import { Button, Card, Empty, ErrorNote, Loading, Pill, SectionHeader } from "@/components/ui";
+import type { ViewProps } from "@/lib/view";
 
 const STATUS_TONE = {
   draft: "attention",
@@ -139,7 +140,7 @@ function MessageCard({ message, onChanged }: { message: Message; onChanged: () =
   );
 }
 
-export function Outreach({ onGoTo }: { onGoTo: (view: never) => void }) {
+export function Outreach({ onGoTo }: ViewProps) {
   const messages = useAsync(() => api.listOutreach(), []);
 
   const open = messages.data?.messages.filter((m) => m.status === "draft" || m.status === "approved") ?? [];
@@ -189,7 +190,7 @@ export function Outreach({ onGoTo }: { onGoTo: (view: never) => void }) {
           title="No messages yet"
           hint="Pick someone from your referrals and draft a message to them."
           action={
-            <Button size="sm" onClick={() => onGoTo("referrals" as never)}>
+            <Button size="sm" onClick={() => onGoTo("referrals")}>
               Go to referrals
             </Button>
           }

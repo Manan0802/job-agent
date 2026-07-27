@@ -89,6 +89,18 @@ export type Profile = {
   keywords: string[];
 };
 
+export type SetupItem = {
+  id: string;
+  label: string;
+  required: boolean;
+  configured: boolean;
+  unlocks: string;
+  detail: string;
+  how: string;
+};
+
+export type Setup = { ready: boolean; items: SetupItem[]; embedding_model: string };
+
 export class ApiError extends Error {}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -171,4 +183,6 @@ export const api = {
   reminders: () => request<{ count: number; reminders: Reminder[] }>("/api/v1/applications/reminders"),
 
   stats: () => request<Stats>("/api/v1/applications/stats"),
+
+  setup: () => request<Setup>("/api/v1/setup"),
 };

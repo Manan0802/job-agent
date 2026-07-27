@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { ArrowSquareOutIcon, MagnifyingGlassIcon, PlusIcon } from "@phosphor-icons/react";
-import { api, ApiError, type Job, type Profile } from "@/lib/api";
+import { api, ApiError, type Job } from "@/lib/api";
 import { useAsync } from "@/lib/useAsync";
 import { Button, Card, Empty, ErrorNote, Loading, Pill, SectionHeader } from "@/components/ui";
 import { cn } from "@/lib/cn";
+import type { ViewProps } from "@/lib/view";
 
 function scoreTone(score: number | null) {
   if (score === null) return "neutral" as const;
@@ -89,7 +90,7 @@ function JobCard({ job, onTrack }: { job: Job; onTrack: (job: Job) => void }) {
   );
 }
 
-export function Jobs({ profile }: { profile: Profile }) {
+export function Jobs({ profile }: ViewProps) {
   const saved = useAsync(() => api.listJobs(50), []);
   // The most recent job title beats a bare keyword: profile.keywords[0] was
   // "AI", which is too broad to return anything useful.

@@ -3,6 +3,7 @@ import { ArrowSquareOutIcon, CaretRightIcon } from "@phosphor-icons/react";
 import { api, ApiError, type Application } from "@/lib/api";
 import { useAsync } from "@/lib/useAsync";
 import { Button, Card, Empty, ErrorNote, Loading, Pill } from "@/components/ui";
+import type { ViewProps } from "@/lib/view";
 
 /* The pipeline as the user thinks about it, not as the database stores it. */
 const COLUMNS = [
@@ -90,7 +91,7 @@ function ApplicationCard({
   );
 }
 
-export function Pipeline({ onGoTo }: { onGoTo: (view: never) => void }) {
+export function Pipeline({ onGoTo }: ViewProps) {
   const applications = useAsync(() => api.listApplications(), []);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -185,7 +186,7 @@ export function Pipeline({ onGoTo }: { onGoTo: (view: never) => void }) {
           title="Nothing in the pipeline"
           hint="Track a job from the Jobs tab and it shows up here."
           action={
-            <Button size="sm" onClick={() => onGoTo("jobs" as never)}>
+            <Button size="sm" onClick={() => onGoTo("jobs")}>
               Find jobs
             </Button>
           }
