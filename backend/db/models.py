@@ -81,6 +81,37 @@ class MessageRow(Base):
     sent_at: Mapped[str | None] = mapped_column(nullable=True)
 
 
+class ApplicationRow(Base):
+    """One job you are pursuing, and where it stands.
+
+    The PRD split the offer into separate INR and USD columns; a single amount
+    plus its currency covers both without inventing a conversion. Its
+    `resume_version_used` and `cover_letter` columns belong to resume
+    tailoring, which is a v2 feature.
+    """
+
+    __tablename__ = "applications"
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    job_id: Mapped[str | None] = mapped_column(nullable=True)
+    company_name: Mapped[str | None] = mapped_column(nullable=True)
+    role_title: Mapped[str | None] = mapped_column(nullable=True)
+    apply_url: Mapped[str | None] = mapped_column(nullable=True)
+    source: Mapped[str | None] = mapped_column(nullable=True)
+    applied_via: Mapped[str | None] = mapped_column(nullable=True)  # direct|referral|cold
+    referral_contact_id: Mapped[str | None] = mapped_column(nullable=True)
+    status: Mapped[str] = mapped_column(default="saved")
+    applied_date: Mapped[str | None] = mapped_column(nullable=True)
+    interview_date: Mapped[str | None] = mapped_column(nullable=True)
+    offer_date: Mapped[str | None] = mapped_column(nullable=True)
+    offer_amount: Mapped[int | None] = mapped_column(nullable=True)
+    offer_currency: Mapped[str | None] = mapped_column(nullable=True)
+    notes: Mapped[str | None] = mapped_column(nullable=True)
+    follow_up_due: Mapped[str | None] = mapped_column(nullable=True)
+    created_at: Mapped[str | None] = mapped_column(nullable=True)
+    last_updated: Mapped[str | None] = mapped_column(nullable=True)
+
+
 class ApiBudgetRow(Base):
     __tablename__ = "api_budget"
 
