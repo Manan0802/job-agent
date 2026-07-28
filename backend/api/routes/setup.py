@@ -12,6 +12,7 @@ import os
 from fastapi import APIRouter
 
 from backend.config import get_settings
+from backend.services import scheduler
 from backend.services.api_budget import remaining
 
 router = APIRouter(prefix="/api/v1/setup", tags=["setup"])
@@ -79,6 +80,21 @@ def status():
                    f"Connections, then save it to {csv_path}.",
         },
         {
+            "id": "schedule",
+            "label": "Hunting on a schedule",
+            "required": False,
+            "configured": scheduler.is_enabled(),
+            "unlocks": "The app hunts on its own every few hours and messages you only "
+                       "about matches you have not seen before.",
+            "detail": (
+                f"Every {_settings.hunt_every_hours}h for "
+                f"\u201c{_settings.hunt_search_term}\u201d in {_settings.hunt_location}"
+                if scheduler.is_enabled() else ""
+            ),
+            "how": "Set HUNT_SEARCH_TERM (e.g. your target role) and HUNT_EVERY_HOURS=12 "
+                   "in .env, then restart. Needs job alerts below to actually reach you.",
+        },
+        {
             "id": "alerts",
             "label": "Job alerts",
             "required": False,
@@ -95,4 +111,5 @@ def status():
         "ready": bool(_settings.llm_api_key),
         "items": items,
         "embedding_model": _settings.embedding_model,
+        "last_scheduled_hunt": scheduler.last_run,
     }

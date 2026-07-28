@@ -39,6 +39,7 @@ class HuntState(TypedDict, total=False):
     shortlist: list[dict]
     scored: list[dict]
     total_found: int
+    notify: bool
     alert_sent: bool
 
 
@@ -93,6 +94,10 @@ def _save(state: HuntState) -> HuntState:
 
 
 def _notify(state: HuntState) -> HuntState:
+    # A scheduled hunt alerts on new matches only, so it turns this off and
+    # does its own notifying; see backend/services/scheduler.py.
+    if state.get("notify") is False:
+        return {"alert_sent": False}
     message = format_job_alert(state.get("scored", []), state.get("total_found", 0))
     return {"alert_sent": send_telegram_alert(message)}
 
@@ -121,10 +126,12 @@ def run_hunt(
     search_term: str,
     location: str = "India",
     top_n: int = DEFAULT_TOP_N,
+    notify: bool = True,
 ) -> HuntState:
     return build_graph().invoke({
         "profile": profile,
         "search_term": search_term,
         "location": location,
         "top_n": top_n,
+        "notify": notify,
     })

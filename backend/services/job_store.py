@@ -13,7 +13,7 @@ from backend.db.models import JobRow
 _COLUMNS = (
     "title", "company", "location", "url", "description",
     "source_engine", "embedding", "prefilter_score",
-    "llm_score", "llm_breakdown", "fetched_at",
+    "llm_score", "llm_breakdown", "fetched_at", "alerted_at", "alerted_score",
 )
 
 

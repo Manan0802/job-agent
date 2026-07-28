@@ -29,6 +29,10 @@ class JobRow(Base):
     llm_score: Mapped[float | None] = mapped_column(nullable=True)
     llm_breakdown: Mapped[str | None] = mapped_column(nullable=True)
     fetched_at: Mapped[str | None] = mapped_column(nullable=True)
+    # When the user was told about this one, so a scheduled hunt does not
+    # re-alert the same listings every day.
+    alerted_at: Mapped[str | None] = mapped_column(nullable=True)
+    alerted_score: Mapped[float | None] = mapped_column(nullable=True)
 
 
 class ContactRow(Base):

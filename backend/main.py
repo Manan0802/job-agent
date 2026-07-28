@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from pathlib import Path
 
@@ -8,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from backend.api.routes import applications, jobs, outreach, referrals, resume, setup, tailor
 from backend.db.database import init_db
 from backend.llm.errors import ModelUnavailable
+from backend.services import scheduler
 
 log = logging.getLogger(__name__)
 
@@ -15,8 +17,10 @@ app = FastAPI(title="Job + Referral Finder")
 
 
 @app.on_event("startup")
-def _startup():
+async def _startup():
     init_db()
+    if scheduler.is_enabled():
+        asyncio.create_task(scheduler.run_forever())
 
 
 app.include_router(resume.router)

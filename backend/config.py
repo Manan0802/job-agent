@@ -27,6 +27,13 @@ class Settings(BaseSettings):
     # Groq's free tier caps prompt+completion at 8k tokens/min and rejects the
     # request outright if max_tokens alone would breach it — leave prompt room.
     groq_max_tokens: int = 6000
+    # Scheduled hunting. Off until a search term is set: a server that started
+    # spending the free tier on its own was never asked to.
+    hunt_every_hours: int = 0
+    hunt_search_term: str = ""
+    hunt_location: str = "India"
+    hunt_top_n: int = 10
+    alert_min_score: float = 70.0
     db_path: str = "./data/db/career_agent.db"
     profile_path: str = "./data/profile/profile.json"
 
