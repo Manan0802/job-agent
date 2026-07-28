@@ -3,6 +3,10 @@
 Gemini sheds load with transient 503s. Falling back on the very first one
 drained Groq's much smaller free budget (8k tokens/min) and left job scoring
 crawling at ~41s per job, so the primary gets a few short retries first.
+
+Its free tier is also only 20 requests a day, so those retries are rationed:
+a daily-quota refusal goes straight to the fallback, because retrying it spends
+the very allowance it just said was gone.
 """
 
 import logging
@@ -15,16 +19,37 @@ from backend.config import get_settings
 log = logging.getLogger(__name__)
 
 _settings = get_settings()
-_client = OpenAI(api_key=_settings.llm_api_key or "missing", base_url=_settings.llm_base_url)
-_groq_client = OpenAI(api_key=_settings.groq_api_key or "missing", base_url=_settings.groq_base_url)
+# max_retries=0: the SDK retries 429s and 503s on its own, which multiplied
+# with the retry loop below into nine requests per call against a 20-a-day
+# budget. Retrying is this module's job, not the client's.
+_client = OpenAI(
+    api_key=_settings.llm_api_key or "missing",
+    base_url=_settings.llm_base_url,
+    max_retries=0,
+)
+_groq_client = OpenAI(
+    api_key=_settings.groq_api_key or "missing",
+    base_url=_settings.groq_base_url,
+    max_retries=0,
+)
 
 _PRIMARY_ATTEMPTS = 3
 _RETRY_BACKOFF_SECONDS = 2.0
 # Gemini's load-shedding lasts minutes, so once it has clearly gone down there
 # is no point paying the full retry budget again on the very next job.
 _PRIMARY_COOLDOWN_SECONDS = 120.0
+# A daily cap will not clear in two minutes. Re-probing that often would spend
+# tomorrow's allowance on finding out it is still today.
+_DAILY_QUOTA_COOLDOWN_SECONDS = 1800.0
 
 _primary_down_until = 0.0
+
+
+def _is_daily_quota(exc: Exception) -> bool:
+    """Whether the primary refused because the day's allowance is gone, rather
+    than because it is momentarily busy. Both arrive as a 429."""
+    text = str(exc)
+    return "429" in text and ("PerDay" in text or "per day" in text)
 
 
 def reset_primary_breaker() -> None:
@@ -58,6 +83,13 @@ def _try_primary(messages: list[dict], model: str | None, max_tokens: int) -> st
             _primary_down_until = 0.0
             return resp.choices[0].message.content.strip()
         except Exception as exc:
+            if _is_daily_quota(exc):
+                _primary_down_until = time.time() + _DAILY_QUOTA_COOLDOWN_SECONDS
+                log.warning(
+                    "primary LLM out of daily quota; on the fallback for %.0fm",
+                    _DAILY_QUOTA_COOLDOWN_SECONDS / 60,
+                )
+                return None
             log.info("primary LLM attempt %d/%d failed: %s", attempt + 1, _PRIMARY_ATTEMPTS, exc)
             if attempt < _PRIMARY_ATTEMPTS - 1:
                 time.sleep(_RETRY_BACKOFF_SECONDS * (attempt + 1))

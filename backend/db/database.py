@@ -1,9 +1,12 @@
+import logging
 import os
 from contextlib import contextmanager
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker, Session
 from backend.config import get_settings
 from backend.db.models import Base
+
+log = logging.getLogger(__name__)
 
 # Engines are created lazily and cached per DB path, so tests that point
 # DB_PATH at a temp file get a fully isolated database (no cross-test bleed).
@@ -27,7 +30,39 @@ def _get_engine():
 
 
 def init_db() -> None:
-    Base.metadata.create_all(_get_engine())
+    engine = _get_engine()
+    Base.metadata.create_all(engine)
+    _add_missing_columns(engine)
+
+
+def _add_missing_columns(engine) -> None:
+    """Bring a database made by an earlier version up to the current models.
+
+    create_all() adds missing tables but never missing columns, so adding a
+    field to a model leaves every existing database on the old shape and the
+    first query against it fails with "no such column". SQLite can add nullable
+    columns in place, which is all this project has ever needed.
+    """
+    inspector = inspect(engine)
+    tables = set(inspector.get_table_names())
+
+    with engine.begin() as conn:
+        for table in Base.metadata.sorted_tables:
+            if table.name not in tables:
+                continue
+            present = {c["name"] for c in inspector.get_columns(table.name)}
+            for column in table.columns:
+                if column.name in present:
+                    continue
+                if not column.nullable:
+                    log.warning(
+                        "%s.%s is not nullable and cannot be added to an existing "
+                        "database automatically", table.name, column.name,
+                    )
+                    continue
+                type_sql = column.type.compile(engine.dialect)
+                log.info("adding missing column %s.%s", table.name, column.name)
+                conn.execute(text(f"ALTER TABLE {table.name} ADD COLUMN {column.name} {type_sql}"))
 
 
 @contextmanager
