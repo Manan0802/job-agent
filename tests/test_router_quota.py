@@ -67,9 +67,10 @@ def test_a_spent_daily_quota_stays_shut_for_longer_than_a_blip(monkeypatch):
         MagicMock(return_value=_answering("x")),
     )
 
-    router.complete("hi")
+    router.complete("hi", model="cheap")
 
-    assert router._primary_down_until - router.time.time() > router._PRIMARY_COOLDOWN_SECONDS
+    shut_for = router._primary_down_until["cheap"] - router.time.time()
+    assert shut_for > router._PRIMARY_COOLDOWN_SECONDS
 
 
 def test_the_sdk_does_not_retry_underneath_us():

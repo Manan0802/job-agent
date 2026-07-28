@@ -44,7 +44,7 @@ def status():
             "required": True,
             "configured": bool(_settings.llm_api_key),
             "unlocks": "Reading your resume, scoring jobs, and writing messages.",
-            "detail": f"{_settings.llm_model}"
+            "detail": f"{_settings.llm_model}, {_settings.llm_model_heavy} for resumes"
             + (f", falling back to {_settings.groq_model}" if _settings.groq_api_key else ""),
             "how": "Get a free key at aistudio.google.com/apikey and put it in .env as LLM_API_KEY.",
         },

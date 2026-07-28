@@ -38,7 +38,7 @@ def test_primary_is_retried_again_once_the_cooldown_expires():
         router.complete("first")
 
         # jump past the cooldown
-        router._primary_down_until = router.time.time() - 1
+        router.reset_primary_breaker()
         primary.chat.completions.create.side_effect = None
         primary.chat.completions.create.return_value = _ok("recovered")
         assert router.complete("second") == "recovered"
@@ -61,5 +61,5 @@ def test_primary_recovering_mid_run_clears_the_breaker():
         groq.chat.completions.create.return_value = _ok("from groq")
         assert router.complete("one") == "recovered"
 
-    assert router._primary_down_until == 0.0
+    assert router.primary_is_available()
     groq.chat.completions.create.assert_not_called()

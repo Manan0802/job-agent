@@ -7,7 +7,11 @@ class Settings(BaseSettings):
 
     llm_api_key: str = ""
     llm_base_url: str = "https://generativelanguage.googleapis.com/v1beta/openai/"
-    llm_model: str = "gemini-3.5-flash"
+    # Gemini free tier is 20 requests a day *per model*, so the volume work
+    # (a score per job) and the occasional hard job (reading a resume) use
+    # different models and therefore different daily budgets.
+    llm_model: str = "gemini-3.5-flash-lite"
+    llm_model_heavy: str = "gemini-3.5-flash"
     groq_api_key: str | None = None
     groq_base_url: str = "https://api.groq.com/openai/v1"
     groq_model: str = "openai/gpt-oss-20b"

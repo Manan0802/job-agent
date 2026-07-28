@@ -1,8 +1,11 @@
 import json
+from backend.config import get_settings
 from backend.llm.errors import ModelUnavailable
 from backend.llm.router import complete
 from backend.utils.pdf_parser import pdf_to_markdown
 from backend.schemas.profile import Profile
+
+_settings = get_settings()
 
 # Spelling the shape out matters: given only a list of top-level key names, the
 # model returned `skills` as a flat list and validation failed.
@@ -46,7 +49,7 @@ def parse_resume_markdown(markdown: str) -> Profile:
     last_error: Exception | None = None
     for _ in range(_MAX_ATTEMPTS):
         try:
-            raw = complete(markdown, system=SYSTEM_PROMPT)
+            raw = complete(markdown, system=SYSTEM_PROMPT, model=_settings.llm_model_heavy)
             return Profile.model_validate(json.loads(_strip_fences(raw)))
         except Exception as exc:
             last_error = exc

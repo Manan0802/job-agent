@@ -6,7 +6,9 @@ crawling at ~41s per job, so the primary gets a few short retries first.
 
 Its free tier is also only 20 requests a day, so those retries are rationed:
 a daily-quota refusal goes straight to the fallback, because retrying it spends
-the very allowance it just said was gone.
+the very allowance it just said was gone. That budget is per model, so the
+breaker is too — the cheap model running dry must not stop the heavy one being
+tried.
 """
 
 import logging
@@ -42,7 +44,8 @@ _PRIMARY_COOLDOWN_SECONDS = 120.0
 # tomorrow's allowance on finding out it is still today.
 _DAILY_QUOTA_COOLDOWN_SECONDS = 1800.0
 
-_primary_down_until = 0.0
+# model name -> the time it becomes worth trying again
+_primary_down_until: dict[str, float] = {}
 
 
 def _is_daily_quota(exc: Exception) -> bool:
@@ -53,49 +56,48 @@ def _is_daily_quota(exc: Exception) -> bool:
 
 
 def reset_primary_breaker() -> None:
-    global _primary_down_until
-    _primary_down_until = 0.0
+    _primary_down_until.clear()
 
 
-def primary_is_available() -> bool:
-    """Whether the primary is currently in play.
+def primary_is_available(model: str | None = None) -> bool:
+    """Whether the primary is currently in play for `model`.
 
     Callers use this to decide how hard to push: the primary allows far more
     per minute than the fallback, so batching wide is only safe while it is up.
     """
-    return time.time() >= _primary_down_until
+    return time.time() >= _primary_down_until.get(model or _settings.llm_model, 0.0)
 
 
 def _try_primary(messages: list[dict], model: str | None, max_tokens: int) -> str | None:
     """Return the primary's answer, or None if it is unavailable right now."""
-    global _primary_down_until
-    if time.time() < _primary_down_until:
+    name = model or _settings.llm_model
+    if not primary_is_available(name):
         return None
 
     for attempt in range(_PRIMARY_ATTEMPTS):
         try:
             resp = _client.chat.completions.create(
-                model=model or _settings.llm_model,
+                model=name,
                 messages=messages,
                 temperature=0.2,
                 max_tokens=max_tokens,
             )
-            _primary_down_until = 0.0
+            _primary_down_until.pop(name, None)
             return resp.choices[0].message.content.strip()
         except Exception as exc:
             if _is_daily_quota(exc):
-                _primary_down_until = time.time() + _DAILY_QUOTA_COOLDOWN_SECONDS
+                _primary_down_until[name] = time.time() + _DAILY_QUOTA_COOLDOWN_SECONDS
                 log.warning(
-                    "primary LLM out of daily quota; on the fallback for %.0fm",
-                    _DAILY_QUOTA_COOLDOWN_SECONDS / 60,
+                    "%s out of daily quota; on the fallback for %.0fm",
+                    name, _DAILY_QUOTA_COOLDOWN_SECONDS / 60,
                 )
                 return None
-            log.info("primary LLM attempt %d/%d failed: %s", attempt + 1, _PRIMARY_ATTEMPTS, exc)
+            log.info("%s attempt %d/%d failed: %s", name, attempt + 1, _PRIMARY_ATTEMPTS, exc)
             if attempt < _PRIMARY_ATTEMPTS - 1:
                 time.sleep(_RETRY_BACKOFF_SECONDS * (attempt + 1))
 
-    _primary_down_until = time.time() + _PRIMARY_COOLDOWN_SECONDS
-    log.warning("primary LLM down; routing to fallback for %.0fs", _PRIMARY_COOLDOWN_SECONDS)
+    _primary_down_until[name] = time.time() + _PRIMARY_COOLDOWN_SECONDS
+    log.warning("%s down; routing to fallback for %.0fs", name, _PRIMARY_COOLDOWN_SECONDS)
     return None
 
 
