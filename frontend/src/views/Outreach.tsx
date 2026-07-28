@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowSquareOutIcon, CheckIcon, CopyIcon, XIcon } from "@phosphor-icons/react";
+import { ArrowSquareOutIcon, ArrowUUpLeftIcon, CheckIcon, CopyIcon, XIcon } from "@phosphor-icons/react";
 import { api, ApiError, type Message } from "@/lib/api";
 import { useAsync } from "@/lib/useAsync";
 import { Button, Card, Empty, ErrorNote, Loading, Pill, SectionHeader } from "@/components/ui";
@@ -79,6 +79,15 @@ function MessageCard({ message, onChanged }: { message: Message; onChanged: () =
 
       {error && (
         <p className="border-t bg-critical-soft px-4 py-2.5 text-[13px] text-critical">{error}</p>
+      )}
+
+      {message.status === "sent" && (
+        <div className="flex flex-wrap items-center gap-2 border-t px-4 py-3">
+          <p className="text-[13px] text-ink-soft">No reply yet?</p>
+          <Button size="sm" disabled={busy} onClick={() => act(() => api.followUp(message.id))}>
+            <ArrowUUpLeftIcon size={14} /> Draft a nudge
+          </Button>
+        </div>
       )}
 
       {!readOnly && (

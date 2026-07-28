@@ -78,6 +78,13 @@ COVER_LETTER_PROMPT = (
 class CoverLetter(BaseModel):
     body: str
     opening_hook: str = ""
+    # Same check the resume suggestions get. The letter goes straight to the
+    # employer, so it earns it more, not less.
+    unsupported: list[str] = []
+
+    @property
+    def has_unsupported(self) -> bool:
+        return bool(self.unsupported)
 
 
 def _strip_fences(text: str) -> str:
@@ -114,6 +121,11 @@ def _resume_text(profile: Profile) -> str:
         f"Education: {'; '.join(e for e in education if e) or 'none listed'}\n"
         f"Keywords: {', '.join(profile.keywords) or 'none'}"
     )
+
+
+def _job_meta(job: dict) -> str:
+    """The company and title, which any letter is expected to name."""
+    return f"{job.get('company') or ''} {job.get('title') or ''}"
 
 
 def _job_text(job: dict) -> str:
@@ -156,25 +168,31 @@ _HARMLESS = {
 }
 
 
-def _unsupported_terms(text: str, resume: str, job: str) -> list[str]:
-    """Words a suggestion took from the posting that the resume never backs.
+def _unsupported_terms(text: str, resume: str, job: str, job_meta: str = "") -> list[str]:
+    """Words the text took from the posting that the resume never backs.
 
     A live run produced "Experienced in building distributed, scalable backend
     systems" for a resume that never says distributed. The instruction not to
     invent was already in the prompt and did not hold, so this checks.
+
+    `job_meta` (the company and title) is excluded: naming the employer you are
+    writing to is expected, and flagging it would teach the user to ignore the
+    warning.
     """
     import re
 
     resume_words = set(re.findall(r"[a-z]+", resume.lower()))
     job_words = set(re.findall(r"[a-z]+", job.lower()))
+    meta_words = set(re.findall(r"[a-z]+", job_meta.lower()))
 
     flagged = []
     for word in re.findall(r"[A-Za-z][A-Za-z+#.-]{3,}", text):
         clean = word.lower().strip(".-")
-        if clean in _HARMLESS or clean in resume_words or clean not in job_words:
+        if clean in _HARMLESS or clean in resume_words or clean in meta_words:
             continue
-        if clean not in flagged:
-            flagged.append(clean)
+        if clean not in job_words or clean in flagged:
+            continue
+        flagged.append(clean)
     return flagged
 
 
@@ -191,16 +209,21 @@ def analyze_fit(job: dict, profile: Profile) -> FitAnalysis:
     analysis = FitAnalysis.model_validate(data)
 
     analysis.suggestions = analysis.suggestions[:_MAX_SUGGESTIONS]
+    meta = _job_meta(job)
     for suggestion in analysis.suggestions:
-        suggestion.unsupported = _unsupported_terms(suggestion.change, resume, posting)
+        suggestion.unsupported = _unsupported_terms(suggestion.change, resume, posting, meta)
     return analysis
 
 
 def draft_cover_letter(job: dict, profile: Profile) -> CoverLetter:
+    resume = _resume_text(profile)
+    posting = _job_text(job)
     prompt = (
-        f"JOB:\n{_job_text(job)}\n\n"
-        f"THE CANDIDATE'S RESUME:\n{_resume_text(profile)}\n\n"
+        f"JOB:\n{posting}\n\n"
+        f"THE CANDIDATE'S RESUME:\n{resume}\n\n"
         "Write the letter."
     )
     data = _ask(prompt, COVER_LETTER_PROMPT, _LETTER_MAX_TOKENS, "draft a cover letter")
-    return CoverLetter.model_validate(data)
+    letter = CoverLetter.model_validate(data)
+    letter.unsupported = _unsupported_terms(letter.body, resume, posting, _job_meta(job))
+    return letter

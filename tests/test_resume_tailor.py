@@ -161,3 +161,40 @@ def test_the_cover_letter_prompt_also_forbids_invention():
 def test_the_cover_letter_prompt_keeps_it_short():
     """A page of prose does not get read."""
     assert "words" in resume_tailor.COVER_LETTER_PROMPT.lower()
+
+
+def test_a_cover_letter_is_checked_for_overreach_too():
+    """The letter goes straight to the employer, so it gets the same check the
+    resume suggestions get."""
+    stretched = json.dumps({
+        "body": "I have deep Kubernetes experience and built distributed systems.",
+        "opening_hook": "the infra work",
+    })
+    with patch.object(resume_tailor, "complete", return_value=stretched):
+        letter = resume_tailor.draft_cover_letter(JOB, PROFILE)
+
+    assert "kubernetes" in [t.lower() for t in letter.unsupported]
+    assert letter.has_unsupported is True
+
+
+def test_a_grounded_cover_letter_is_not_flagged():
+    with patch.object(resume_tailor, "complete", return_value=COVER_LETTER):
+        letter = resume_tailor.draft_cover_letter(JOB, PROFILE)
+
+    assert letter.unsupported == []
+    assert letter.has_unsupported is False
+
+
+def test_naming_the_company_and_role_is_not_treated_as_overreach():
+    """Addressing the letter to the company is expected, not a claim. Flagging
+    it would train the user to ignore the warning."""
+    named = json.dumps({
+        "body": "I'd love to join Zepto as an AI Engineer. I built RAG pipelines at IndiaMART.",
+        "opening_hook": "the RAG work",
+    })
+    with patch.object(resume_tailor, "complete", return_value=named):
+        letter = resume_tailor.draft_cover_letter(JOB, PROFILE)
+
+    flagged = [t.lower() for t in letter.unsupported]
+    assert "zepto" not in flagged
+    assert "engineer" not in flagged

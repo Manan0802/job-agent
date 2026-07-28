@@ -28,13 +28,19 @@ function Warmth({ score }: { score: number }) {
 function ContactCard({
   contact,
   onDraft,
+  onSeeDraft,
   drafting,
 }: {
   contact: Contact;
   onDraft: (contact: Contact) => void;
+  onSeeDraft: () => void;
   drafting: boolean;
 }) {
-  const alreadyContacted = contact.outreach_status !== "pending";
+  const status = contact.outreach_status;
+  // A draft is unfinished business, so it stays actionable; sent and skipped
+  // are done and just report themselves.
+  const drafted = status === "drafted";
+  const finished = status === "sent" || status === "skipped";
 
   return (
     <Card className="px-4 py-3.5">
@@ -56,15 +62,18 @@ function ContactCard({
       )}
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <Button
-          size="sm"
-          variant={alreadyContacted ? "ghost" : "primary"}
-          disabled={drafting || alreadyContacted}
-          onClick={() => onDraft(contact)}
-        >
-          <PenNibIcon size={14} />
-          {alreadyContacted ? contact.outreach_status : drafting ? "Writing…" : "Draft message"}
-        </Button>
+        {finished ? (
+          <Pill tone={status === "sent" ? "good" : "neutral"}>{status}</Pill>
+        ) : drafted ? (
+          <Button size="sm" onClick={onSeeDraft}>
+            <PenNibIcon size={14} /> See your draft
+          </Button>
+        ) : (
+          <Button size="sm" variant="primary" disabled={drafting} onClick={() => onDraft(contact)}>
+            <PenNibIcon size={14} />
+            {drafting ? "Writing…" : "Draft message"}
+          </Button>
+        )}
         {contact.linkedin_url && (
           <a
             href={contact.linkedin_url}
@@ -182,6 +191,7 @@ export function Referrals({ onGoTo }: ViewProps) {
                 contact={contact}
                 drafting={draftingId === contact.id}
                 onDraft={draft}
+                onSeeDraft={() => onGoTo("outreach")}
               />
             ))}
           </div>

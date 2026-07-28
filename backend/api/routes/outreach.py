@@ -105,7 +105,48 @@ def draft(request: DraftRequest):
         "tone": written.tone,
         "personalization": json.dumps(written.personalization_elements),
     })
+    # So the referrals list shows you already wrote to them. Only from
+    # "pending", or a follow-up draft would make a sent contact look untouched.
+    if contact.get("outreach_status") == "pending":
+        set_outreach_status(request.contact_id, "drafted")
     return _with_send_link(_require_message(message_id))
+
+
+@router.post("/{message_id}/follow-up")
+def follow_up(message_id: str):
+    """Nudge a message that got no reply, without repeating the pitch."""
+    original = _require_message(message_id)
+    if original["status"] != "sent":
+        raise HTTPException(
+            status_code=400,
+            detail="You can only follow up on a message you've already sent.",
+        )
+
+    profile = load_profile()
+    if profile is None:
+        raise HTTPException(
+            status_code=400,
+            detail="No profile yet — upload a resume at /api/v1/resume/upload first",
+        )
+    contact = _require_contact(original["contact_id"])
+
+    written = draft_message(
+        contact,
+        profile,
+        message_type="followup",
+        previous_message=original["body"],
+    )
+    new_id = save_message({
+        "contact_id": original["contact_id"],
+        "job_id": original["job_id"],
+        "message_type": written.message_type,
+        "channel": written.channel,
+        "subject": written.subject,
+        "body": written.message,
+        "tone": written.tone,
+        "personalization": json.dumps(written.personalization_elements),
+    })
+    return _with_send_link(_require_message(new_id))
 
 
 @router.get("")

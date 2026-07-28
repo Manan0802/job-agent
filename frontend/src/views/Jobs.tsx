@@ -1,6 +1,9 @@
 import { useState } from "react";
-import { ArrowSquareOutIcon, MagnifyingGlassIcon, PlusIcon, SparkleIcon } from "@phosphor-icons/react";
-import { api, ApiError, type FitAnalysis, type Job } from "@/lib/api";
+import {
+  ArrowSquareOutIcon, CheckIcon, CopyIcon, EnvelopeSimpleIcon,
+  MagnifyingGlassIcon, PlusIcon, SparkleIcon,
+} from "@phosphor-icons/react";
+import { api, ApiError, type CoverLetter, type FitAnalysis, type Job } from "@/lib/api";
 import { useAsync } from "@/lib/useAsync";
 import { Button, Card, Empty, ErrorNote, Loading, Pill, SectionHeader } from "@/components/ui";
 import { cn } from "@/lib/cn";
@@ -17,21 +20,43 @@ function scoreTone(score: number | null) {
 function JobCard({ job, onTrack }: { job: Job; onTrack: (job: Job) => void }) {
   const [tracked, setTracked] = useState(false);
   const [fit, setFit] = useState<FitAnalysis | null>(null);
-  const [tailoring, setTailoring] = useState(false);
+  const [letter, setLetter] = useState<CoverLetter | null>(null);
+  const [busy, setBusy] = useState<"fit" | "letter" | null>(null);
   const [fitError, setFitError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const reasons = job.llm_breakdown ? JSON.parse(job.llm_breakdown) : null;
 
   async function tailor() {
     if (fit) return setFit(null);
-    setTailoring(true);
+    setBusy("fit");
     setFitError(null);
     try {
       setFit(await api.analyzeFit(job.id));
     } catch (e) {
       setFitError(e instanceof ApiError ? e.message : "Could not analyse this one");
     } finally {
-      setTailoring(false);
+      setBusy(null);
     }
+  }
+
+  async function writeLetter() {
+    if (letter) return setLetter(null);
+    setBusy("letter");
+    setFitError(null);
+    try {
+      setLetter(await api.coverLetter(job.id));
+    } catch (e) {
+      setFitError(e instanceof ApiError ? e.message : "Could not write a letter for this one");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function copyLetter() {
+    if (!letter) return;
+    await navigator.clipboard.writeText(letter.body);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
   }
 
   return (
@@ -100,9 +125,13 @@ function JobCard({ job, onTrack }: { job: Job; onTrack: (job: Job) => void }) {
             Open <ArrowSquareOutIcon size={14} />
           </a>
         )}
-        <Button size="sm" variant="ghost" disabled={tailoring} onClick={tailor}>
+        <Button size="sm" variant="ghost" disabled={busy !== null} onClick={tailor}>
           <SparkleIcon size={14} />
-          {tailoring ? "Reading…" : fit ? "Hide" : "Tailor"}
+          {busy === "fit" ? "Reading…" : fit ? "Hide" : "Tailor"}
+        </Button>
+        <Button size="sm" variant="ghost" disabled={busy !== null} onClick={writeLetter}>
+          <EnvelopeSimpleIcon size={14} />
+          {busy === "letter" ? "Writing…" : letter ? "Hide" : "Cover letter"}
         </Button>
         {job.source_engine && (
           <span className="ml-auto text-[11px] text-ink-faint">{job.source_engine}</span>
@@ -116,6 +145,27 @@ function JobCard({ job, onTrack }: { job: Job; onTrack: (job: Job) => void }) {
         </p>
       )}
       {fit && <FitPanel fit={fit} />}
+
+      {letter && (
+        <div className="border-t">
+          <p className="border-b bg-sunken px-4 py-2 text-[12px] text-ink-soft">
+            Opens on {letter.opening_hook}.
+          </p>
+          {letter.has_unsupported && (
+            <p className="border-b bg-attention-soft px-4 py-2 text-[12px] leading-relaxed text-attention">
+              This letter claims <strong>{letter.unsupported.join(", ")}</strong>, which your
+              resume never mentions. Cut or reword anything that isn't true of you — a letter
+              goes straight to the employer.
+            </p>
+          )}
+          <p className="px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap">{letter.body}</p>
+          <div className="border-t px-4 py-2.5">
+            <Button size="sm" onClick={copyLetter}>
+              {copied ? <><CheckIcon size={14} /> Copied</> : <><CopyIcon size={14} /> Copy</>}
+            </Button>
+          </div>
+        </div>
+      )}
     </Card>
   );
 }

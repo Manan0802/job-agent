@@ -120,12 +120,19 @@ def _sender_summary(profile: Profile) -> str:
     )
 
 
-def _build_prompt(contact: dict, profile: Profile, job: dict | None, spec: dict) -> str:
+def _build_prompt(contact: dict, profile: Profile, job: dict | None, spec: dict,
+                  previous_message: str | None = None) -> str:
     reasons = ", ".join(contact.get("warmth_reasons") or []) or "none identified"
     job_block = (
         f"Title: {job.get('title')}\nCompany: {job.get('company')}\n"
         f"Details: {(job.get('description') or '')[:600]}"
         if job else "No specific role yet — they are interested in the company."
+    )
+    # A follow-up that does not know what was already said just repeats it.
+    prior = (
+        f"ALREADY SENT TO THEM, WITH NO REPLY:\n{previous_message}\n"
+        "Do not repeat this. Assume they read it.\n\n"
+        if previous_message else ""
     )
     return (
         f"SENDER:\n{_sender_summary(profile)}\n\n"
@@ -135,6 +142,7 @@ def _build_prompt(contact: dict, profile: Profile, job: dict | None, spec: dict)
         f"Company: {contact.get('current_company')}\n"
         f"Relationship: {contact.get('degree_type') or '2nd'}-degree\n"
         f"Why this person was picked: {reasons}\n\n"
+        f"{prior}"
         f"ROLE BEING DISCUSSED:\n{job_block}\n\n"
         f"TASK: {spec['intent']}.\n"
         f"Keep the message under {spec['max_words']} words."
@@ -142,12 +150,13 @@ def _build_prompt(contact: dict, profile: Profile, job: dict | None, spec: dict)
 
 
 def draft_message(contact: dict, profile: Profile, job: dict | None = None,
-                  message_type: str | None = None) -> OutreachDraft:
+                  message_type: str | None = None,
+                  previous_message: str | None = None) -> OutreachDraft:
     """Draft one message for review. Retries because model output is not
     deterministic; raises rather than handing the user something broken."""
     message_type = message_type or pick_message_type(contact)
     spec = MESSAGE_TYPES.get(message_type) or MESSAGE_TYPES["cold_intro"]
-    prompt = _build_prompt(contact, profile, job, spec)
+    prompt = _build_prompt(contact, profile, job, spec, previous_message)
 
     last_error: Exception | None = None
     for _ in range(_MAX_ATTEMPTS):

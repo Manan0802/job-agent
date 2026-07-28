@@ -49,4 +49,5 @@ def cover_letter(request: TailorRequest):
     return {
         "job": {"id": job["id"], "title": job.get("title"), "company": job.get("company")},
         **letter.model_dump(),
+        "has_unsupported": letter.has_unsupported,
     }

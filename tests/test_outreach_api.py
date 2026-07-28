@@ -97,6 +97,24 @@ def test_drafting_still_works_when_no_job_is_named(db):
     assert draft.call_args.kwargs["job"] is None
 
 
+def test_drafting_marks_the_contact_so_the_referrals_list_shows_it(db):
+    """Otherwise the referrals list gives no sign you already wrote to someone."""
+    from backend.services.contact_store import load_contacts
+
+    _draft_for()
+    assert load_contacts("Zepto")[0]["outreach_status"] == "drafted"
+
+
+def test_redrafting_never_downgrades_someone_you_already_messaged(db):
+    """A follow-up draft must not make a sent contact look un-contacted."""
+    from backend.services.contact_store import load_contacts, set_outreach_status
+
+    set_outreach_status("c1", "sent")
+    _draft_for()
+
+    assert load_contacts("Zepto")[0]["outreach_status"] == "sent"
+
+
 def test_the_user_can_rewrite_the_draft(db):
     message_id = _draft_for().json()["id"]
 

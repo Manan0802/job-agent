@@ -119,6 +119,15 @@ export type FitAnalysis = {
   has_unsupported: boolean;
 };
 
+export type CoverLetter = {
+  job: { id: string; title: string | null; company: string | null };
+  body: string;
+  opening_hook: string;
+  /** Claims the letter makes that your resume never backs. */
+  unsupported: string[];
+  has_unsupported: boolean;
+};
+
 export class ApiError extends Error {}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -188,6 +197,7 @@ export const api = {
   approveOutreach: (id: string) => post<Message>(`/api/v1/outreach/${id}/approve`),
   markOutreachSent: (id: string) => post<Message>(`/api/v1/outreach/${id}/sent`),
   skipOutreach: (id: string) => post<Message>(`/api/v1/outreach/${id}/skip`),
+  followUp: (id: string) => post<Message>(`/api/v1/outreach/${id}/follow-up`),
 
   listApplications: () =>
     request<{ count: number; applications: Application[] }>("/api/v1/applications"),
@@ -206,4 +216,7 @@ export const api = {
 
   analyzeFit: (jobId: string) =>
     post<FitAnalysis>("/api/v1/tailor/analyze", { job_id: jobId }),
+
+  coverLetter: (jobId: string) =>
+    post<CoverLetter>("/api/v1/tailor/cover-letter", { job_id: jobId }),
 };
