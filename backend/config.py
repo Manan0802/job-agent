@@ -34,6 +34,8 @@ class Settings(BaseSettings):
     hunt_location: str = "India"
     hunt_top_n: int = 10
     alert_min_score: float = 70.0
+    # Set this before exposing the app beyond localhost; see docs/DEPLOY.md.
+    app_password: str = ""
     db_path: str = "./data/db/career_agent.db"
     profile_path: str = "./data/profile/profile.json"
 

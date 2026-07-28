@@ -9,11 +9,14 @@ from fastapi.staticfiles import StaticFiles
 from backend.api.routes import applications, jobs, outreach, referrals, resume, setup, tailor
 from backend.db.database import init_db
 from backend.llm.errors import ModelUnavailable
+from backend.middleware.auth import require_password
 from backend.services import scheduler
 
 log = logging.getLogger(__name__)
 
 app = FastAPI(title="Job + Referral Finder")
+
+app.middleware("http")(require_password)
 
 
 @app.on_event("startup")

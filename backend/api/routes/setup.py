@@ -80,6 +80,17 @@ def status():
                    f"Connections, then save it to {csv_path}.",
         },
         {
+            "id": "password",
+            "label": "Password",
+            "required": False,
+            "configured": bool(_settings.app_password),
+            "unlocks": "Sharing the app beyond this laptop. Everything here is "
+                       "personal, so ./share.sh will not open a tunnel without it.",
+            "detail": "",
+            "how": "Set APP_PASSWORD in .env to anything long, then restart. "
+                   "See docs/DEPLOY.md.",
+        },
+        {
             "id": "schedule",
             "label": "Hunting on a schedule",
             "required": False,
