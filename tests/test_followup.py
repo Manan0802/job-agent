@@ -111,6 +111,27 @@ def test_the_drafter_shows_the_model_the_earlier_message():
     assert "already sent" in prompt.lower() or "previous" in prompt.lower()
 
 
+def test_a_follow_up_is_told_not_to_reintroduce_the_sender():
+    """A real follow-up came back opening 'I'm Manan Kumar, an SDE-1 at...' —
+    the prompt's general rule to introduce the sender was fighting the
+    follow-up's whole purpose."""
+    with patch.object(outreach_drafter, "complete", return_value=GOOD) as c:
+        outreach_drafter.draft_message(
+            {"name": "Asha", "current_company": "Zepto"}, PROFILE,
+            message_type="followup", previous_message=ORIGINAL)
+
+    prompt = c.call_args[0][0].lower()
+    assert "introduce" in prompt          # explicitly overridden
+    assert "know who you are" in prompt or "already know" in prompt
+
+
+def test_a_first_message_still_introduces_the_sender():
+    with patch.object(outreach_drafter, "complete", return_value=GOOD) as c:
+        outreach_drafter.draft_message({"name": "Asha", "current_company": "Zepto"}, PROFILE)
+
+    assert "do not introduce" not in c.call_args[0][0].lower()
+
+
 def test_a_first_message_carries_no_previous_message():
     with patch.object(outreach_drafter, "complete", return_value=GOOD) as c:
         outreach_drafter.draft_message({"name": "Asha", "current_company": "Zepto"}, PROFILE)

@@ -128,10 +128,16 @@ def _build_prompt(contact: dict, profile: Profile, job: dict | None, spec: dict,
         f"Details: {(job.get('description') or '')[:600]}"
         if job else "No specific role yet — they are interested in the company."
     )
-    # A follow-up that does not know what was already said just repeats it.
+    # A follow-up has to override the general rules above: told only "don't
+    # repeat", a real draft still opened "I'm Manan Kumar, an SDE-1 at ..." and
+    # read like a first message.
     prior = (
-        f"ALREADY SENT TO THEM, WITH NO REPLY:\n{previous_message}\n"
-        "Do not repeat this. Assume they read it.\n\n"
+        f"ALREADY SENT TO THEM, WITH NO REPLY:\n{previous_message}\n\n"
+        "THIS IS A FOLLOW-UP TO THAT MESSAGE, so the rules above change:\n"
+        "- Do NOT introduce yourself. They already know who you are.\n"
+        "- Do NOT restate the ask or the pitch. They read it.\n"
+        "- Just acknowledge you're bumping it, give them an easy out, and stop.\n"
+        "- Two or three sentences is plenty.\n\n"
         if previous_message else ""
     )
     return (
