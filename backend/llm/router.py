@@ -32,6 +32,15 @@ def reset_primary_breaker() -> None:
     _primary_down_until = 0.0
 
 
+def primary_is_available() -> bool:
+    """Whether the primary is currently in play.
+
+    Callers use this to decide how hard to push: the primary allows far more
+    per minute than the fallback, so batching wide is only safe while it is up.
+    """
+    return time.time() >= _primary_down_until
+
+
 def _try_primary(messages: list[dict], model: str | None, max_tokens: int) -> str | None:
     """Return the primary's answer, or None if it is unavailable right now."""
     global _primary_down_until
