@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { CheckCircleIcon, CircleDashedIcon, WarningIcon } from "@phosphor-icons/react";
-import { api, ApiError, type Profile } from "@/lib/api";
+import { api, ApiError, type Profile, type ScheduledHunt } from "@/lib/api";
 import { useAsync } from "@/lib/useAsync";
 import { Button, Card, ErrorNote, Loading, SectionHeader } from "@/components/ui";
 import type { ViewProps } from "@/lib/view";
@@ -73,6 +73,15 @@ function ProfileCard({ profile, onReplaced }: { profile: Profile; onReplaced: ()
   );
 }
 
+function lastHuntLine(run: ScheduledHunt): string {
+  const when = new Date(run.at).toLocaleString();
+  if (run.skipped) return `${when} — skipped: ${run.skipped}`;
+  if (run.error) return `${when} — failed: ${run.error}`;
+  if (!run.new_matches) return `${when} — ${run.total_found} jobs, nothing new`;
+  const sent = run.alerted ? "messaged you" : "not messaged, alerts are off";
+  return `${when} — ${run.new_matches} new of ${run.total_found}, ${sent}`;
+}
+
 export function Settings({ profile, onProfileChanged }: ViewProps) {
   const setup = useAsync(() => api.setup(), []);
 
@@ -141,6 +150,11 @@ export function Settings({ profile, onProfileChanged }: ViewProps) {
               </Card>
             ))}
           </div>
+        )}
+        {setup.data?.last_scheduled_hunt && (
+          <p className="mt-2 text-[13px] text-ink-faint">
+            Last automatic hunt: {lastHuntLine(setup.data.last_scheduled_hunt)}
+          </p>
         )}
       </section>
 

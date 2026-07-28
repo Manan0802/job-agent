@@ -99,7 +99,21 @@ export type SetupItem = {
   how: string;
 };
 
-export type Setup = { ready: boolean; items: SetupItem[]; embedding_model: string };
+export type ScheduledHunt = {
+  at: string;
+  total_found?: number;
+  new_matches?: number;
+  alerted?: boolean;
+  skipped?: string;
+  error?: string;
+};
+
+export type Setup = {
+  ready: boolean;
+  items: SetupItem[];
+  embedding_model: string;
+  last_scheduled_hunt: ScheduledHunt | null;
+};
 
 export type Suggestion = {
   section: string;
