@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { ArrowSquareOutIcon, CaretRightIcon } from "@phosphor-icons/react";
-import { api, ApiError, type Application } from "@/lib/api";
+import { ArrowSquareOutIcon, CaretRightIcon, ChatCircleTextIcon } from "@phosphor-icons/react";
+import { api, ApiError, type Application, type InterviewPrep } from "@/lib/api";
 import { useAsync } from "@/lib/useAsync";
 import { Button, Card, Empty, ErrorNote, Loading, Pill } from "@/components/ui";
+import { InterviewPanel } from "@/components/InterviewPanel";
 import type { ViewProps } from "@/lib/view";
 
 /* The pipeline as the user thinks about it, not as the database stores it. */
@@ -24,6 +25,11 @@ const NEXT_STAGE: Record<string, string> = {
   offer_received: "accepted",
 };
 
+/* Prep is offered only while an interview is still ahead. Offering it on every
+   job you saved would burn the free tier on postings you never applied to, and
+   offering it after the interview is advice that arrives too late. */
+const INTERVIEW_AHEAD = new Set(["applied", "referral_pending", "interview_scheduled"]);
+
 const NEXT_LABEL: Record<string, string> = {
   saved: "Mark applied",
   applied: "Got an interview",
@@ -36,13 +42,16 @@ const NEXT_LABEL: Record<string, string> = {
 function ApplicationCard({
   application,
   onMove,
+  onPrep,
   busy,
 }: {
   application: Application;
   onMove: (id: string, status: string) => void;
+  onPrep: (application: Application) => void;
   busy: boolean;
 }) {
   const next = NEXT_STAGE[application.status];
+  const canPrep = !!application.job_id && INTERVIEW_AHEAD.has(application.status);
 
   return (
     <Card className="min-w-0 px-3 py-2.5">
@@ -75,6 +84,17 @@ function ApplicationCard({
             {NEXT_LABEL[application.status]} <CaretRightIcon size={12} />
           </Button>
         )}
+        {canPrep && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="px-1.5"
+            aria-label={`Interview prep for ${application.role_title ?? "this role"}`}
+            onClick={() => onPrep(application)}
+          >
+            <ChatCircleTextIcon size={13} /> Prep
+          </Button>
+        )}
         {application.apply_url && (
           <a
             href={application.apply_url}
@@ -95,6 +115,20 @@ export function Pipeline({ onGoTo }: ViewProps) {
   const applications = useAsync(() => api.listApplications(), []);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [prepFor, setPrepFor] = useState<Application | null>(null);
+  const [prep, setPrep] = useState<InterviewPrep | null>(null);
+  const [prepError, setPrepError] = useState<string | null>(null);
+
+  async function openPrep(application: Application) {
+    setPrepFor(application);
+    setPrep(null);
+    setPrepError(null);
+    try {
+      setPrep(await api.interviewPrep(application.job_id!));
+    } catch (e) {
+      setPrepError(e instanceof ApiError ? e.message : "Could not prepare for this one");
+    }
+  }
 
   async function move(id: string, status: string) {
     setBusyId(id);
@@ -114,6 +148,16 @@ export function Pipeline({ onGoTo }: ViewProps) {
 
   return (
     <div className="grid gap-6">
+      {prepFor && (
+        <InterviewPanel
+          prep={prep}
+          loading={!prep && !prepError}
+          error={prepError}
+          title={`${prepFor.role_title ?? ""} at ${prepFor.company_name ?? ""}`}
+          onClose={() => setPrepFor(null)}
+        />
+      )}
+
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Pipeline</h1>
         <p className="mt-1 text-sm text-ink-soft">
@@ -148,6 +192,7 @@ export function Pipeline({ onGoTo }: ViewProps) {
                           key={application.id}
                           application={application}
                           onMove={move}
+                          onPrep={openPrep}
                           busy={busyId === application.id}
                         />
                       ))}

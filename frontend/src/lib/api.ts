@@ -133,6 +133,22 @@ export type FitAnalysis = {
   has_unsupported: boolean;
 };
 
+export type InterviewQuestion = {
+  question: string;
+  why: string;
+  answer_from: string;
+  unsupported: string[];
+};
+
+export type InterviewPrep = {
+  job: { id: string; title: string | null; company: string | null };
+  role_focus: string;
+  questions: InterviewQuestion[];
+  weak_spots: string[];
+  ask_them: string[];
+  has_unsupported: boolean;
+};
+
 export type CoverLetter = {
   job: { id: string; title: string | null; company: string | null };
   body: string;
@@ -233,4 +249,7 @@ export const api = {
 
   coverLetter: (jobId: string) =>
     post<CoverLetter>("/api/v1/tailor/cover-letter", { job_id: jobId }),
+
+  interviewPrep: (jobId: string) =>
+    post<InterviewPrep>("/api/v1/interview/prep", { job_id: jobId }),
 };
