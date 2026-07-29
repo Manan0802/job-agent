@@ -6,7 +6,9 @@ from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from backend.api.routes import applications, jobs, outreach, referrals, resume, setup, tailor
+from backend.api.routes import (
+    applications, interview, jobs, outreach, referrals, resume, setup, tailor,
+)
 from backend.db.database import init_db
 from backend.llm.errors import ModelUnavailable
 from backend.middleware.auth import require_password
@@ -33,6 +35,7 @@ app.include_router(outreach.router)
 app.include_router(applications.router)
 app.include_router(setup.router)
 app.include_router(tailor.router)
+app.include_router(interview.router)
 
 
 @app.exception_handler(ModelUnavailable)

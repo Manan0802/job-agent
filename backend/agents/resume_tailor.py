@@ -21,6 +21,13 @@ from pydantic import BaseModel
 from backend.llm.errors import ModelUnavailable
 from backend.llm.router import complete
 from backend.schemas.profile import Profile
+from backend.agents.grounding import (
+    job_meta as _job_meta,
+    job_text as _job_text,
+    resume_text as _resume_text,
+    strip_fences as _strip_fences,
+    unsupported_terms as _unsupported_terms,
+)
 from backend.schemas.tailoring import FitAnalysis
 
 log = logging.getLogger(__name__)
@@ -87,55 +94,6 @@ class CoverLetter(BaseModel):
         return bool(self.unsupported)
 
 
-def _strip_fences(text: str) -> str:
-    text = text.strip()
-    if text.startswith("```"):
-        text = text.split("\n", 1)[1] if "\n" in text else text
-        if text.endswith("```"):
-            text = text.rsplit("```", 1)[0]
-    return text.strip()
-
-
-def _resume_text(profile: Profile) -> str:
-    s = profile.skills
-    skills = [*s.languages, *s.frameworks, *s.ai_ml, *s.tools, *s.databases]
-
-    experience = []
-    for e in profile.experience:
-        line = f"- {e.role or 'role'} at {e.company or 'company'}"
-        if e.highlights:
-            line += "\n" + "\n".join(f"    · {h}" for h in e.highlights)
-        if e.tech_used:
-            line += f"\n    (tech: {', '.join(e.tech_used)})"
-        experience.append(line)
-
-    education = [
-        " ".join(part for part in (e.degree, e.field, e.institution) if part)
-        for e in profile.education
-    ]
-
-    return (
-        f"Name: {profile.personal.name or 'the candidate'}\n"
-        f"Skills listed: {', '.join(skills) or 'none'}\n"
-        f"Experience:\n{chr(10).join(experience) or '  none listed'}\n"
-        f"Education: {'; '.join(e for e in education if e) or 'none listed'}\n"
-        f"Keywords: {', '.join(profile.keywords) or 'none'}"
-    )
-
-
-def _job_meta(job: dict) -> str:
-    """The company and title, which any letter is expected to name."""
-    return f"{job.get('company') or ''} {job.get('title') or ''}"
-
-
-def _job_text(job: dict) -> str:
-    return (
-        f"Title: {job.get('title')}\n"
-        f"Company: {job.get('company')}\n"
-        f"Posting: {(job.get('description') or '')[:_DESCRIPTION_CHARS]}"
-    )
-
-
 def _ask(prompt: str, system: str, max_tokens: int, what: str) -> dict:
     last_error: Exception | None = None
     for _ in range(_MAX_ATTEMPTS):
@@ -145,55 +103,6 @@ def _ask(prompt: str, system: str, max_tokens: int, what: str) -> dict:
         except Exception as exc:
             last_error = exc
     raise ModelUnavailable(f"could not {what} after {_MAX_ATTEMPTS} attempts: {last_error}")
-
-
-# Words too generic to be a claim about capability.
-_HARMLESS = {
-    "and", "the", "for", "with", "your", "you", "add", "lead", "move", "top",
-    "list", "line", "bullet", "section", "summary", "skills", "experience",
-    "resume", "role", "job", "posting", "this", "that", "from", "into", "which",
-    "using", "used", "use", "work", "working", "team", "teams", "new", "more",
-    "make", "makes", "show", "shows", "put", "start", "first", "rewrite",
-    "rephrase", "highlight", "mention", "emphasise", "emphasize", "including",
-    # Auxiliaries and connectives that carry no claim, but do turn up in
-    # postings ("nice to have", "experience across ...").
-    "have", "has", "had", "been", "were", "will", "can", "could", "should",
-    "would", "across", "under", "over", "also", "both", "each", "other",
-    "than", "then", "there", "these", "those", "them", "their", "when",
-    "where", "while", "such", "very", "most", "many", "some", "any", "all",
-    "ensure", "ensuring", "describing", "describe", "include", "note", "line",
-    "sentence", "brief", "place", "reorder", "under", "top",
-    # Generic verbs: the claim lives in what follows them, not in the verb.
-    "build", "building", "built", "create", "creating", "created", "deliver",
-}
-
-
-def _unsupported_terms(text: str, resume: str, job: str, job_meta: str = "") -> list[str]:
-    """Words the text took from the posting that the resume never backs.
-
-    A live run produced "Experienced in building distributed, scalable backend
-    systems" for a resume that never says distributed. The instruction not to
-    invent was already in the prompt and did not hold, so this checks.
-
-    `job_meta` (the company and title) is excluded: naming the employer you are
-    writing to is expected, and flagging it would teach the user to ignore the
-    warning.
-    """
-    import re
-
-    resume_words = set(re.findall(r"[a-z]+", resume.lower()))
-    job_words = set(re.findall(r"[a-z]+", job.lower()))
-    meta_words = set(re.findall(r"[a-z]+", job_meta.lower()))
-
-    flagged = []
-    for word in re.findall(r"[A-Za-z][A-Za-z+#.-]{3,}", text):
-        clean = word.lower().strip(".-")
-        if clean in _HARMLESS or clean in resume_words or clean in meta_words:
-            continue
-        if clean not in job_words or clean in flagged:
-            continue
-        flagged.append(clean)
-    return flagged
 
 
 def analyze_fit(job: dict, profile: Profile) -> FitAnalysis:
