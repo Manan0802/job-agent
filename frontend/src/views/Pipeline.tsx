@@ -72,7 +72,9 @@ function ApplicationCard({
         {application.source && <Pill>{application.source}</Pill>}
       </div>
 
-      <div className="mt-2.5 flex items-center gap-1">
+      {/* Wraps: three controls do not fit a kanban column at 1140px, and
+          without it the last one spills out over the next column. */}
+      <div className="mt-2.5 flex flex-wrap items-center gap-1">
         {next && (
           <Button
             size="sm"
