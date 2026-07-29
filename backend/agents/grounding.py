@@ -86,27 +86,62 @@ _HARMLESS = {
 }
 
 
-def unsupported_terms(text: str, resume: str, job: str, job_meta: str = "") -> list[str]:
+# Ways of saying "you do not have this". A term named inside one of these is
+# being admitted to, not claimed.
+_ADMISSION = re.compile(
+    r"\b(lacks?|lacking|missing|absent|gap|no experience|not shown|does not show|"
+    r"doesn't show|do not have|don't have|have not|haven't|has not|hasn't|"
+    r"never used|without)\b",
+    re.IGNORECASE,
+)
+# Clause boundaries. "Acknowledge the lack of Java, but emphasise Kubernetes"
+# admits one thing and claims another, so the admission must not cover both.
+_CLAUSE = re.compile(r"(?:[.;:!?]\s+)|(?:,?\s+(?:but|although|though|however|while)\s+)")
+
+
+def unsupported_terms(
+    text: str, resume: str, job: str, job_meta: str = "", named_only: bool = False
+) -> list[str]:
     """Words the text took from the posting that the resume never backs.
 
     A live run produced "Experienced in building distributed, scalable backend
     systems" for a resume that never says distributed. The instruction not to
     invent was already in the prompt and did not hold, so this checks.
 
-    `job_meta` (the company and title) is excluded: naming the employer you are
-    writing to is expected, and flagging it would teach the user to ignore the
-    warning.
+    Two things are deliberately not flagged, because a warning that is usually
+    wrong teaches the user to click past it:
+
+    - `job_meta` (the company and title) — naming the employer you are writing
+      to is expected.
+    - anything named inside an admission of not having it. A live run produced
+      "Acknowledge the lack of Java on the resume" and this read it as a boast,
+      when the advice was exactly right. The check runs per clause, so a claim
+      that follows an admission is still caught.
+
+    `named_only` narrows it to capitalised technology names. Tailoring wants
+    the wide rule — its suggestions are terse edits, so a lowercase claim like
+    "distributed" is the whole point. Interview prep is prose about the role,
+    where the wide rule flagged "about", "high" and "designing" across five of
+    six answers, none of them real. What can actually be falsely rehearsed
+    there is a named technology.
     """
     resume_words = set(re.findall(r"[a-z]+", resume.lower()))
     job_words = set(re.findall(r"[a-z]+", job.lower()))
     meta_words = set(re.findall(r"[a-z]+", job_meta.lower()))
 
-    flagged = []
-    for word in re.findall(r"[A-Za-z][A-Za-z+#.-]{3,}", text):
-        clean = word.lower().strip(".-")
-        if clean in _HARMLESS or clean in resume_words or clean in meta_words:
+    flagged: list[str] = []
+    for clause in _CLAUSE.split(text):
+        if _ADMISSION.search(clause):
             continue
-        if clean not in job_words or clean in flagged:
-            continue
-        flagged.append(clean)
+        # Skip the first word: a sentence-initial capital says nothing.
+        words = re.findall(r"[A-Za-z][A-Za-z+#.-]{3,}", clause)
+        for position, word in enumerate(words):
+            if named_only and not (word[0].isupper() and position > 0):
+                continue
+            clean = word.lower().strip(".-")
+            if clean in _HARMLESS or clean in resume_words or clean in meta_words:
+                continue
+            if clean not in job_words or clean in flagged:
+                continue
+            flagged.append(clean)
     return flagged

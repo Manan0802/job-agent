@@ -125,6 +125,14 @@ def test_it_suggests_what_to_ask_them():
     assert prep.ask_them == ["Who owns the schema today?"]
 
 
+def test_the_prompt_asks_for_enough_questions_to_be_worth_reading():
+    """A real run returned three, because nothing asked for more. Three is not
+    preparation for an interview loop."""
+    from backend.agents.interview_prep import SYSTEM_PROMPT
+
+    assert "six" in SYSTEM_PROMPT.lower() or "6" in SYSTEM_PROMPT
+
+
 def test_too_many_questions_are_cut_to_what_can_be_rehearsed():
     many = [{"question": f"Q{i}", "why": "w", "answer_from": "a"} for i in range(20)]
     with _returning(_reply(questions=many)):

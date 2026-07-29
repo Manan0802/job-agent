@@ -41,6 +41,11 @@ SYSTEM_PROMPT = (
     "Questions must come from THIS posting, not from a generic list. Skip "
     "'tell me about yourself'. For each one, say what in the posting makes it "
     "likely and which of the candidate's own projects or results answers it.\n\n"
+    "Give six to eight questions — fewer is not preparation for a real loop. "
+    "Cover the technical ground the posting leads on, and include one or two "
+    "the candidate should expect about *how* they work (ownership, a decision "
+    "they got wrong, why they are moving) — grounded in their actual history, "
+    "not asked in the abstract.\n\n"
     "Return exactly:\n"
     "{\n"
     '  "role_focus": str, one sentence on what this interview is really testing,\n'
@@ -101,5 +106,7 @@ def prepare_for(job: dict, profile: Profile) -> InterviewPrep:
     prep.questions = prep.questions[:_MAX_QUESTIONS]
     meta = job_meta(job)
     for question in prep.questions:
-        question.unsupported = unsupported_terms(question.answer_from, resume, posting, meta)
+        question.unsupported = unsupported_terms(
+            question.answer_from, resume, posting, meta, named_only=True
+        )
     return prep
